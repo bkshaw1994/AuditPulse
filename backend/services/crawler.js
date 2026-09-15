@@ -474,17 +474,15 @@ async function auditUrlWithHttp(targetUrl, originalError) {
 }
 
 /**
- * Rules Engine for SEO, Core Web Vitals, and Social tags auditing
+ * Sub-auditor for SEO dynamic tags & headings
  */
-function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
+function auditSeoMeta(seoMeta, targetUrl) {
   const issues = [];
-  let seoPoints = 100;
-  let perfPoints = 100;
-  let socialPoints = 100;
+  let points = 100;
 
   // 1. Title Audit
   if (!seoMeta.title) {
-    seoPoints -= 25;
+    points -= 25;
     issues.push({
       severity: 'critical',
       category: 'seo',
@@ -495,7 +493,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       fixSnippet: `<Helmet>\n  <title>Page Title - App Name</title>\n</Helmet>`
     });
   } else if (seoMeta.titleLength < 30 || seoMeta.titleLength > 60) {
-    seoPoints -= 10;
+    points -= 10;
     issues.push({
       severity: 'warning',
       category: 'seo',
@@ -509,7 +507,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
 
   // 2. Meta Description Audit
   if (!seoMeta.description) {
-    seoPoints -= 20;
+    points -= 20;
     issues.push({
       severity: 'critical',
       category: 'seo',
@@ -520,7 +518,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       fixSnippet: `<meta name="description" content="Clear, engaging 70 to 160 character description of this page." />`
     });
   } else if (seoMeta.descriptionLength < 70 || seoMeta.descriptionLength > 160) {
-    seoPoints -= 8;
+    points -= 8;
     issues.push({
       severity: 'warning',
       category: 'seo',
@@ -534,7 +532,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
 
   // 3. Canonical Link Audit
   if (!seoMeta.canonical) {
-    seoPoints -= 15;
+    points -= 15;
     issues.push({
       severity: 'warning',
       category: 'seo',
@@ -547,8 +545,9 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
   }
 
   // 4. Headings Audit
-  if (!seoMeta.headings.h1 || seoMeta.headings.h1.length === 0) {
-    seoPoints -= 15;
+  const hasH1 = seoMeta.headings && seoMeta.headings.h1 && seoMeta.headings.h1.length > 0;
+  if (!hasH1) {
+    points -= 15;
     issues.push({
       severity: 'critical',
       category: 'seo',
@@ -562,7 +561,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
 
   // 5. Image Alt Audit
   if (seoMeta.imagesMissingAlt > 0) {
-    seoPoints -= Math.min(15, seoMeta.imagesMissingAlt * 3);
+    points -= Math.min(15, seoMeta.imagesMissingAlt * 3);
     issues.push({
       severity: 'warning',
       category: 'accessibility',
@@ -574,14 +573,21 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  // 6. Social Open Graph
-  const ogKeys = Object.keys(seoMeta.ogTags || {});
-  const hasOgTitle = ogKeys.some(k => k.toLowerCase() === 'og:title');
-  const hasOgDesc = ogKeys.some(k => k.toLowerCase() === 'og:description');
-  const hasOgImage = ogKeys.some(k => k.toLowerCase() === 'og:image');
+  return { points: Math.max(0, points), issues };
+}
 
-  if (!hasOgTitle || !hasOgDesc || !hasOgImage) {
-    socialPoints -= 35;
+/**
+ * Sub-auditor for Social OpenGraph & Twitter tags
+ */
+function auditSocialMeta(ogTags) {
+  const issues = [];
+  let points = 100;
+
+  const ogKeys = Object.keys(ogTags || {}).map(k => k.toLowerCase());
+  const isMissingOg = !ogKeys.includes('og:title') || !ogKeys.includes('og:description') || !ogKeys.includes('og:image');
+
+  if (isMissingOg) {
+    points -= 35;
     issues.push({
       severity: 'warning',
       category: 'social',
@@ -593,9 +599,18 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  // 7. Core Web Vitals Audit
+  return { points: Math.max(0, points), issues };
+}
+
+/**
+ * Sub-auditor for Core Web Vitals performance metrics
+ */
+function auditPerformance(perf) {
+  const issues = [];
+  let points = 100;
+
   if (perf.lcp > 4000) {
-    perfPoints -= 35;
+    points -= 35;
     issues.push({
       severity: 'critical',
       category: 'performance',
@@ -606,7 +621,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       fixSnippet: `<link rel="preload" as="image" href="/hero-image.webp" fetchpriority="high" />`
     });
   } else if (perf.lcp > 2500) {
-    perfPoints -= 15;
+    points -= 15;
     issues.push({
       severity: 'warning',
       category: 'performance',
@@ -619,7 +634,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
   }
 
   if (perf.ttfb > 1800) {
-    perfPoints -= 25;
+    points -= 25;
     issues.push({
       severity: 'critical',
       category: 'performance',
@@ -631,9 +646,26 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  seoPoints = Math.max(0, Math.min(100, seoPoints));
-  perfPoints = Math.max(0, Math.min(100, perfPoints));
-  socialPoints = Math.max(0, Math.min(100, socialPoints));
+  return { points: Math.max(0, points), issues };
+}
+
+/**
+ * Rules Engine for SEO, Core Web Vitals, and Social tags auditing
+ */
+function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
+  const seoResult = auditSeoMeta(seoMeta, targetUrl);
+  const socialResult = auditSocialMeta(seoMeta.ogTags);
+  const perfResult = auditPerformance(perf);
+
+  const seoPoints = seoResult.points;
+  const socialPoints = socialResult.points;
+  const perfPoints = perfResult.points;
+
+  const issues = [
+    ...seoResult.issues,
+    ...socialResult.issues,
+    ...perfResult.issues
+  ];
 
   const overall = Math.round(seoPoints * 0.45 + perfPoints * 0.45 + socialPoints * 0.1);
 
