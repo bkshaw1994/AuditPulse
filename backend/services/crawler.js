@@ -124,27 +124,87 @@ function inspectRawSsrHtml(targetUrl) {
   });
 }
 
+function decodeHtmlEntities(text) {
+  if (!text) return '';
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+}
+
+function extractMetaContent(html, metaName) {
+  if (!html) return '';
+  const escaped = metaName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const re1 = new RegExp(`<meta[\\s\\S]*?(?:name|property)=["']?${escaped}["']?[\\s\\S]*?content=["']([\\s\\S]*?)["'][\\s\\S]*?>`, 'i');
+  const re2 = new RegExp(`<meta[\\s\\S]*?content=["']([\\s\\S]*?)["'][\\s\\S]*?(?:name|property)=["']?${escaped}["']?[\\s\\S]*?>`, 'i');
+
+  const match1 = html.match(re1);
+  if (match1 && match1[1]) return decodeHtmlEntities(match1[1]);
+
+  const match2 = html.match(re2);
+  if (match2 && match2[1]) return decodeHtmlEntities(match2[1]);
+
+  return '';
+}
+
+function extractTitle(html) {
+  if (!html) return '';
+  const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return match && match[1] ? decodeHtmlEntities(match[1]) : '';
+}
+
+function extractCanonical(html) {
+  if (!html) return '';
+  const re1 = /<link[\s\S]*?rel=["']?canonical["']?[\s\S]*?href=["']([\s\S]*?)["'][\s\S]*?>/i;
+  const re2 = /<link[\s\S]*?href=["']([\s\S]*?)["'][\s\S]*?rel=["']?canonical["']?[\s\S]*?>/i;
+  const m1 = html.match(re1);
+  if (m1 && m1[1]) return m1[1].trim();
+  const m2 = html.match(re2);
+  if (m2 && m2[1]) return m2[1].trim();
+  return '';
+}
+
+function extractAllMetaTags(html, prefix) {
+  const obj = {};
+  if (!html) return obj;
+
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`<meta[\\s\\S]*?(?:name|property)=["']?(${escapedPrefix}[^"'>\\s]+)["']?[\\s\\S]*?content=["']([\\s\\S]*?)["'][\\s\\S]*?>`, 'gi');
+
+  const matches = html.matchAll(regex);
+  for (const match of matches) {
+    if (match[1] && match[2]) {
+      obj[match[1].trim()] = decodeHtmlEntities(match[2]);
+    }
+  }
+
+  const reverseRegex = new RegExp(`<meta[\\s\\S]*?content=["']([\\s\\S]*?)["'][\\s\\S]*?(?:name|property)=["']?(${escapedPrefix}[^"'>\\s]+)["']?[\\s\\S]*?>`, 'gi');
+  const revMatches = html.matchAll(reverseRegex);
+  for (const match of revMatches) {
+    if (match[1] && match[2] && !obj[match[2].trim()]) {
+      obj[match[2].trim()] = decodeHtmlEntities(match[1]);
+    }
+  }
+
+  return obj;
+}
+
 function parseRawHtmlMeta(html) {
-  const getTagValue = (regex) => {
-    const match = html.match(regex);
-    return match && match[1] ? match[1].trim() : '';
-  };
+  const rawTitle = extractTitle(html);
+  const rawDescription = extractMetaContent(html, 'description');
+  const rawCanonical = extractCanonical(html);
+  const rawOgTitle = extractMetaContent(html, 'og:title');
+  const rawOgDesc = extractMetaContent(html, 'og:description');
+  const rawOgImage = extractMetaContent(html, 'og:image');
 
-  const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-  const rawTitle = titleMatch ? titleMatch[1].trim() : '';
-
-  const rawDescription = getTagValue(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
-                        getTagValue(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
-
-  const rawCanonical = getTagValue(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']*)["']/i) ||
-                       getTagValue(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']canonical["']/i);
-
-  const rawOgTitle = getTagValue(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i);
-  const rawOgDesc = getTagValue(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i);
-  const rawOgImage = getTagValue(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["']/i);
-
-  const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
-  const rawH1 = h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : '';
+  const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const rawH1 = h1Match && h1Match[1] ? decodeHtmlEntities(h1Match[1]) : '';
 
   return {
     rawTitle,
@@ -154,10 +214,10 @@ function parseRawHtmlMeta(html) {
     rawOgDesc,
     rawOgImage,
     rawH1,
-    hasRawTitle: !!rawTitle,
-    hasRawDescription: !!rawDescription,
-    hasRawOg: !!(rawOgTitle || rawOgDesc || rawOgImage),
-    rawHtmlLength: html.length
+    hasRawTitle: Boolean(rawTitle),
+    hasRawDescription: Boolean(rawDescription),
+    hasRawOg: Boolean(rawOgTitle || rawOgDesc || rawOgImage),
+    rawHtmlLength: html ? html.length : 0
   };
 }
 
@@ -438,36 +498,16 @@ async function auditUrlWithHttp(targetUrl, originalError) {
     const responseTime = Date.now() - startTime;
     const html = typeof httpRes.data === 'string' ? httpRes.data : '';
 
-    const getTagContent = (regex) => {
-      const match = html.match(regex);
-      return match && match[1] ? match[1].replace(/<[^>]+>/g, '').trim() : '';
-    };
+    const title = extractTitle(html);
+    const description = extractMetaContent(html, 'description');
+    const keywords = extractMetaContent(html, 'keywords');
+    const canonical = extractCanonical(html);
+    const robots = extractMetaContent(html, 'robots');
+    const viewport = extractMetaContent(html, 'viewport');
+    const charset = extractMetaContent(html, 'charset') || 'UTF-8';
 
-    const getMetaAttr = (nameOrProperty) => {
-      const re1 = new RegExp(`<meta[^>]*?(?:name|property)=["']${nameOrProperty}["'][^>]*?content=["'](.*?)["']`, 'i');
-      const re2 = new RegExp(`<meta[^>]*?content=["'](.*?)["'][^>]*?(?:name|property)=["']${nameOrProperty}["']`, 'i');
-      return getTagContent(re1) || getTagContent(re2);
-    };
-
-    const title = getTagContent(/<title[^>]*>(.*?)<\/title>/i);
-    const description = getMetaAttr('description');
-    const keywords = getMetaAttr('keywords');
-    const canonical = getTagContent(/<link[^>]*?rel=["']canonical["'][^>]*?href=["'](.*?)["']/i);
-    const robots = getMetaAttr('robots');
-    const viewport = getMetaAttr('viewport');
-    const charset = getTagContent(/<meta[^>]*?charset=["'](.*?)["']/i) || 'UTF-8';
-
-    const ogTags = {};
-    const ogMatches = html.matchAll(/<meta[^>]*?(?:name|property)=["'](og:[^"']+)["'][^>]*?content=["'](.*?)["']/gi);
-    for (const match of ogMatches) {
-      if (match[1] && match[2]) ogTags[match[1]] = match[2].trim();
-    }
-
-    const twitterTags = {};
-    const twitterMatches = html.matchAll(/<meta[^>]*?(?:name|property)=["'](twitter:[^"']+)["'][^>]*?content=["'](.*?)["']/gi);
-    for (const match of twitterMatches) {
-      if (match[1] && match[2]) twitterTags[match[1]] = match[2].trim();
-    }
+    const ogTags = extractAllMetaTags(html, 'og:');
+    const twitterTags = extractAllMetaTags(html, 'twitter:');
 
     const h1s = [];
     const h1Matches = html.matchAll(/<h1[^>]*>(.*?)<\/h1>/gi);
