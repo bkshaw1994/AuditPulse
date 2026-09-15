@@ -1,4 +1,27 @@
-const API_BASE = '/api/audit';
+function getApiBaseUrl() {
+  const envUrl = (typeof window !== 'undefined' && window.RUNTIME_API_BASE_URL)
+    || (import.meta && import.meta.env && import.meta.env.VITE_API_BASE_URL)
+    || '/api/audit';
+
+  let cleaned = envUrl.trim().replace(/\/+$/, '');
+
+  if (!cleaned) {
+    return '/api/audit';
+  }
+
+  // Ensure path ends with /api/audit regardless of how BE url was provided in env
+  if (!cleaned.endsWith('/api/audit')) {
+    if (cleaned.endsWith('/api')) {
+      cleaned = `${cleaned}/audit`;
+    } else {
+      cleaned = `${cleaned}/api/audit`;
+    }
+  }
+
+  return cleaned;
+}
+
+const API_BASE = getApiBaseUrl();
 
 export async function runAudit(url) {
   const res = await fetch(`${API_BASE}/run`, {
