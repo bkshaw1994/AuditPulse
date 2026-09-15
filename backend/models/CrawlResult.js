@@ -5,13 +5,27 @@ const path = require('path');
 const CrawlResultSchema = new mongoose.Schema({
   url: { type: String, required: true, index: true },
   domain: { type: String, required: true, index: true },
-  timestamp: { type: Date, default: Date.now, index: true },
-  
+  renderingType: { type: String, enum: ['SSR/SSG', 'CSR', 'HYBRID', 'UNKNOWN'], default: 'CSR' },
+
   scores: {
     overall: { type: Number, default: 0 },
     seo: { type: Number, default: 0 },
     performance: { type: Number, default: 0 },
     social: { type: Number, default: 0 }
+  },
+
+  ssrMeta: {
+    rawTitle: { type: String, default: '' },
+    rawDescription: { type: String, default: '' },
+    rawCanonical: { type: String, default: '' },
+    rawOgTitle: { type: String, default: '' },
+    rawOgDesc: { type: String, default: '' },
+    rawOgImage: { type: String, default: '' },
+    rawH1: { type: String, default: '' },
+    hasRawTitle: { type: Boolean, default: false },
+    hasRawDescription: { type: Boolean, default: false },
+    hasRawOg: { type: Boolean, default: false },
+    rawHtmlLength: { type: Number, default: 0 }
   },
 
   performanceMetrics: {

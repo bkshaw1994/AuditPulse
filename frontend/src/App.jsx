@@ -11,6 +11,7 @@ import MetaTagTable from './components/MetaTagTable';
 import SocialPreview from './components/SocialPreview';
 import DiffViewer from './components/DiffViewer';
 import StructuredDataViewer from './components/StructuredDataViewer';
+import SsrAuditCard from './components/SsrAuditCard';
 import IssuesList from './components/IssuesList';
 import { runAudit, fetchHistory, fetchMonitoredSites } from './services/api';
 
@@ -168,6 +169,11 @@ export default function App() {
                     timestamp={currentAudit.timestamp}
                     domain={currentAudit.domain}
                   />
+                  <SsrAuditCard
+                    renderingType={currentAudit.renderingType}
+                    ssrMeta={currentAudit.ssrMeta}
+                    seoMeta={currentAudit.seoMeta}
+                  />
                   <WebVitalsCard metrics={currentAudit.performanceMetrics} />
                   <IssuesList issues={currentAudit.issues} />
                 </>
@@ -179,6 +185,15 @@ export default function App() {
                   <WebVitalsCard metrics={currentAudit.performanceMetrics} />
                   <TrendChart history={history} />
                 </>
+              )}
+
+              {/* View 3: SSR vs CSR Architecture Dedicated */}
+              {activeTab === 'ssr' && (
+                <SsrAuditCard
+                  renderingType={currentAudit.renderingType}
+                  ssrMeta={currentAudit.ssrMeta}
+                  seoMeta={currentAudit.seoMeta}
+                />
               )}
 
               {/* View 3: Dynamic Meta Tags */}

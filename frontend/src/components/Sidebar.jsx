@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   Zap,
+  Server,
   Tag,
   Share2,
   TrendingUp,
@@ -18,6 +19,7 @@ export default function Sidebar({ activeTab, setActiveTab, issuesCount = 0, sche
   const menuItems = [
     { id: 'overview', label: 'Overview & Vitals', icon: LayoutDashboard },
     { id: 'vitals', label: 'Core Web Vitals', icon: Zap },
+    { id: 'ssr', label: 'SSR vs CSR Audit', icon: Server },
     { id: 'metatags', label: 'Dynamic Meta Tags', icon: Tag },
     { id: 'social', label: 'Social Preview', icon: Share2 },
     { id: 'trends', label: 'Historical Analytics', icon: TrendingUp },
