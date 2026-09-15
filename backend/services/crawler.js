@@ -1,5 +1,7 @@
 const puppeteer = require('puppeteer');
 const { URL } = require('url');
+const http = require('http');
+const https = require('https');
 
 /**
  * SSRF Protection Validator
@@ -39,12 +41,110 @@ function validatePublicUrl(targetUrl) {
 }
 
 /**
- * Production-Hardened SPA Crawler Engine
+ * Inspect Raw Initial Un-hydrated HTTP HTML for SSR / SSG Audit
+ */
+function inspectRawSsrHtml(targetUrl) {
+  return new Promise((resolve) => {
+    try {
+      const parsed = new URL(targetUrl);
+      const client = parsed.protocol === 'https:' ? https : http;
+
+      const req = client.get(targetUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9'
+        },
+        timeout: 8000
+      }, (res) => {
+        let rawData = '';
+        res.on('data', (chunk) => {
+          rawData += chunk;
+          if (rawData.length > 500000) res.destroy(); // Cap at 500KB for speed
+        });
+
+        res.on('end', () => {
+          const ssrMeta = parseRawHtmlMeta(rawData);
+          resolve(ssrMeta);
+        });
+      });
+
+      req.on('error', () => {
+        resolve(getEmptySsrMeta());
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(getEmptySsrMeta());
+      });
+    } catch (e) {
+      resolve(getEmptySsrMeta());
+    }
+  });
+}
+
+function parseRawHtmlMeta(html) {
+  const getTagValue = (regex) => {
+    const match = html.match(regex);
+    return match && match[1] ? match[1].trim() : '';
+  };
+
+  const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+  const rawTitle = titleMatch ? titleMatch[1].trim() : '';
+
+  const rawDescription = getTagValue(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
+                        getTagValue(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+
+  const rawCanonical = getTagValue(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']*)["']/i) ||
+                       getTagValue(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']canonical["']/i);
+
+  const rawOgTitle = getTagValue(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i);
+  const rawOgDesc = getTagValue(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i);
+  const rawOgImage = getTagValue(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["']/i);
+
+  const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+  const rawH1 = h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : '';
+
+  return {
+    rawTitle,
+    rawDescription,
+    rawCanonical,
+    rawOgTitle,
+    rawOgDesc,
+    rawOgImage,
+    rawH1,
+    hasRawTitle: !!rawTitle,
+    hasRawDescription: !!rawDescription,
+    hasRawOg: !!(rawOgTitle || rawOgDesc || rawOgImage),
+    rawHtmlLength: html.length
+  };
+}
+
+function getEmptySsrMeta() {
+  return {
+    rawTitle: '',
+    rawDescription: '',
+    rawCanonical: '',
+    rawOgTitle: '',
+    rawOgDesc: '',
+    rawOgImage: '',
+    rawH1: '',
+    hasRawTitle: false,
+    hasRawDescription: false,
+    hasRawOg: false,
+    rawHtmlLength: 0
+  };
+}
+
+/**
+ * Production-Hardened Dual Mode (SSR + CSR) SPA Crawler Engine
  */
 async function auditUrl(targetUrl) {
   const parsedUrl = validatePublicUrl(targetUrl);
   const startTime = Date.now();
   
+  // 1. Fetch raw un-hydrated HTTP response for SSR inspection
+  const ssrMeta = await inspectRawSsrHtml(targetUrl);
+
   let browser = null;
   let page = null;
 
@@ -165,6 +265,7 @@ async function auditUrl(targetUrl) {
       };
     });
 
+    // 2. Extract dynamically rendered CSR DOM metadata
     const seoMeta = await page.evaluate(() => {
       const getMetaContent = (query) => {
         const el = document.querySelector(query);
@@ -232,6 +333,14 @@ async function auditUrl(targetUrl) {
       };
     });
 
+    // Determine Rendering Classification (SSR vs CSR vs Hybrid)
+    let renderingType = 'CSR';
+    if (ssrMeta.hasRawTitle && ssrMeta.hasRawDescription && ssrMeta.hasRawOg) {
+      renderingType = 'SSR/SSG';
+    } else if (ssrMeta.hasRawTitle || ssrMeta.hasRawDescription) {
+      renderingType = 'HYBRID';
+    }
+
     const performanceMetrics = {
       ttfb: perfData.ttfb > 0 ? perfData.ttfb : Math.round(ttiEstimate * 0.15),
       fcp: perfData.fcp > 0 ? perfData.fcp : Math.round(ttiEstimate * 0.35),
@@ -245,15 +354,17 @@ async function auditUrl(targetUrl) {
       totalPageSizeKB: Math.round(totalBytes / 1024)
     };
 
-    const auditAnalysis = analyzeSeoAndPerformance(seoMeta, performanceMetrics, targetUrl);
+    const auditAnalysis = analyzeSeoAndPerformance(seoMeta, ssrMeta, renderingType, performanceMetrics, targetUrl);
 
     return {
       url: targetUrl,
       domain: parsedUrl.hostname,
       timestamp: new Date().toISOString(),
+      renderingType,
       scores: auditAnalysis.scores,
       performanceMetrics,
       seoMeta,
+      ssrMeta,
       issues: auditAnalysis.issues,
       status: 'success'
     };
@@ -264,9 +375,11 @@ async function auditUrl(targetUrl) {
       url: targetUrl,
       domain: parsedUrl ? parsedUrl.hostname : targetUrl,
       timestamp: new Date().toISOString(),
+      renderingType: 'UNKNOWN',
       scores: { overall: 0, seo: 0, performance: 0, social: 0 },
       performanceMetrics: { ttfb: 0, fcp: 0, lcp: 0, cls: 0, tti: 0, domContentLoaded: 0, loadTime: 0, jsHeapSizeKB: 0, totalRequests: 0, totalPageSizeKB: 0 },
       seoMeta: { title: '', titleLength: 0, description: '', descriptionLength: 0, keywords: '', canonical: '', robots: '', viewport: '', charset: '', ogTags: {}, twitterTags: {}, headings: { h1: [], h2Count: 0, h3Count: 0 }, structuredData: [], imagesTotal: 0, imagesMissingAlt: 0 },
+      ssrMeta: getEmptySsrMeta(),
       issues: [{
         severity: 'critical',
         category: 'seo',
@@ -290,15 +403,42 @@ async function auditUrl(targetUrl) {
 }
 
 /**
- * Rules Engine for SEO, Core Web Vitals, and Social tags auditing
+ * Rules Engine for SEO, Core Web Vitals, SSR vs CSR, and Social tags auditing
  */
-function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
+function analyzeSeoAndPerformance(seoMeta, ssrMeta, renderingType, perf, targetUrl) {
   const issues = [];
   let seoPoints = 100;
   let perfPoints = 100;
   let socialPoints = 100;
 
-  // 1. Title Audit
+  // 1. SSR vs CSR Hydration & Social Bot Readiness Check
+  if (!ssrMeta.hasRawOg && (seoMeta.ogTags?.['og:title'] || seoMeta.ogTags?.['og:image'])) {
+    socialPoints -= 30;
+    issues.push({
+      severity: 'critical',
+      category: 'social',
+      code: 'SSR_SOCIAL_BOT_FAILURE',
+      title: 'Social Share Cards Fail on Non-JS Bots (SSR Gap)',
+      description: 'OpenGraph tags are injected only on client JS mount. Social bots (Twitterbot, facebookexternalhit, LinkedInBot, Slackbot) do NOT execute JavaScript and will display blank preview cards.',
+      solution: 'Pre-render OpenGraph og:title, og:description, and og:image tags into server-side raw HTML using Next.js metadata, Remix meta, or SSR pre-rendering.',
+      fixSnippet: `// Next.js App Router (app/layout.js or page.js)\nexport const metadata = {\n  title: 'Page Title',\n  openGraph: {\n    title: 'Page Title',\n    description: 'Social snippet description',\n    images: ['https://example.com/og.png']\n  }\n};`
+    });
+  }
+
+  if (!ssrMeta.hasRawTitle && seoMeta.title) {
+    seoPoints -= 15;
+    issues.push({
+      severity: 'warning',
+      category: 'seo',
+      code: 'SSR_MISSING_RAW_TITLE',
+      title: 'Title Tag Missing from Initial Server HTML',
+      description: 'The initial HTTP HTML response lacks a `<title>` tag before client JS execution. Non-JS web crawlers will see an untitled document.',
+      solution: 'Server-render the initial <title> tag in raw HTML.',
+      fixSnippet: `// Next.js / Remix / SSR HTML\n<head>\n  <title>Pre-rendered Title</title>\n</head>`
+    });
+  }
+
+  // 2. Title Audit
   if (!seoMeta.title) {
     seoPoints -= 25;
     issues.push({
@@ -307,7 +447,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       code: 'MISSING_TITLE',
       title: 'Missing Page Title Tag',
       description: 'The dynamically rendered SPA DOM does not contain a `<title>` tag.',
-      solution: 'Inject a dynamic page title tag inside your React component using react-helmet-async.',
+      solution: 'Inject a dynamic page title tag inside your React component using react-helmet-async or Next.js Metadata API.',
       fixSnippet: `<Helmet>\n  <title>Page Title - App Name</title>\n</Helmet>`
     });
   } else if (seoMeta.titleLength < 30 || seoMeta.titleLength > 60) {
@@ -323,7 +463,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  // 2. Meta Description Audit
+  // 3. Meta Description Audit
   if (!seoMeta.description) {
     seoPoints -= 20;
     issues.push({
@@ -344,11 +484,11 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       title: `Meta Description Length is ${seoMeta.descriptionLength} chars`,
       description: 'Recommended meta description length is between 70 and 160 characters.',
       solution: 'Rewrite meta description to fit between 70 and 160 characters.',
-      fixSnippet: `<meta name="description" content="70-160 character summary of your single page application page." />`
+      fixSnippet: `<meta name="description" content="70-160 character summary of your page." />`
     });
   }
 
-  // 3. Canonical Link Audit
+  // 4. Canonical Link Audit
   if (!seoMeta.canonical) {
     seoPoints -= 15;
     issues.push({
@@ -362,7 +502,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  // 4. Headings Audit
+  // 5. Headings Audit
   if (!seoMeta.headings.h1 || seoMeta.headings.h1.length === 0) {
     seoPoints -= 15;
     issues.push({
@@ -376,7 +516,7 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
     });
   }
 
-  // 5. Image Alt Audit
+  // 6. Image Alt Audit
   if (seoMeta.imagesMissingAlt > 0) {
     seoPoints -= Math.min(15, seoMeta.imagesMissingAlt * 3);
     issues.push({
@@ -387,25 +527,6 @@ function analyzeSeoAndPerformance(seoMeta, perf, targetUrl) {
       description: 'Alt tags improve accessibility and image search indexing.',
       solution: 'Add descriptive alt attributes to all <img> elements.',
       fixSnippet: `<img src="/hero-banner.png" alt="Descriptive accessible image title" />`
-    });
-  }
-
-  // 6. Social Open Graph
-  const ogKeys = Object.keys(seoMeta.ogTags || {});
-  const hasOgTitle = ogKeys.some(k => k.toLowerCase() === 'og:title');
-  const hasOgDesc = ogKeys.some(k => k.toLowerCase() === 'og:description');
-  const hasOgImage = ogKeys.some(k => k.toLowerCase() === 'og:image');
-
-  if (!hasOgTitle || !hasOgDesc || !hasOgImage) {
-    socialPoints -= 35;
-    issues.push({
-      severity: 'warning',
-      category: 'social',
-      code: 'INCOMPLETE_OPEN_GRAPH',
-      title: 'Incomplete Open Graph Social Tags',
-      description: 'Missing essential og:title, og:description, or og:image tags for social media link sharing.',
-      solution: 'Inject og:title, og:description, og:image, and twitter:card meta tags.',
-      fixSnippet: `<meta property="og:title" content="Page Title" />\n<meta property="og:description" content="Share Description" />\n<meta property="og:image" content="https://example.com/social-cover.png" />\n<meta name="twitter:card" content="summary_large_image" />`
     });
   }
 
