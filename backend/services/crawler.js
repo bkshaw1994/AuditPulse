@@ -7,9 +7,9 @@ const https = require('https');
  * Launch Headless Browser (Supports Local Chrome and Vercel/AWS Lambda Serverless Chromium)
  */
 async function launchBrowser() {
-  const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production';
+  const isVercelOrLambda = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-  if (isServerless) {
+  if (isVercelOrLambda) {
     try {
       const puppeteerCore = require('puppeteer-core');
       const chromium = require('@sparticuz/chromium');
@@ -28,7 +28,7 @@ async function launchBrowser() {
     }
   }
 
-  // Fallback to standard local Puppeteer
+  // Standard Local Puppeteer
   const puppeteer = require('puppeteer');
   return await puppeteer.launch({
     headless: 'new',
@@ -528,7 +528,18 @@ async function auditUrlWithHttp(targetUrl, originalError) {
       totalPageSizeKB: Math.round(html.length / 1024)
     };
 
-    const auditAnalysis = analyzeSeoAndPerformance(seoMeta, performanceMetrics, targetUrl);
+    const ssrMeta = {
+      rawTitle: title,
+      rawDescription: description,
+      rawOgTitle: ogTags['og:title'] || '',
+      hasRawTitle: Boolean(title),
+      hasRawDescription: Boolean(description),
+      hasRawOg: Boolean(ogTags['og:title'] || ogTags['og:image'])
+    };
+
+    const renderingType = title ? 'SSR/SSG' : 'CSR';
+
+    const auditAnalysis = analyzeSeoAndPerformance(seoMeta, ssrMeta, renderingType, performanceMetrics, targetUrl);
 
     // Inject info issue clarifying serverless fallback execution
     auditAnalysis.issues.unshift({
@@ -547,15 +558,8 @@ async function auditUrlWithHttp(targetUrl, originalError) {
       scores: auditAnalysis.scores,
       performanceMetrics,
       seoMeta,
-      renderingType: title ? 'SSR/SSG' : 'CSR',
-      ssrMeta: {
-        rawTitle: title,
-        rawDescription: description,
-        rawOgTitle: ogTags['og:title'] || '',
-        hasRawTitle: Boolean(title),
-        hasRawDescription: Boolean(description),
-        hasRawOg: Boolean(ogTags['og:title'])
-      },
+      renderingType,
+      ssrMeta,
       issues: auditAnalysis.issues,
       status: 'success'
     };
