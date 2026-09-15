@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import AuditForm from './components/AuditForm';
@@ -131,15 +132,17 @@ export default function App() {
   const schemaCount = currentAudit?.seoMeta?.structuredData?.length || 0;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      {/* Left Collapsible SaaS Sidebar Navigation */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        issuesCount={issuesCount}
-        schemaCount={schemaCount}
-        onOpenGuide={() => setIsGuideOpen(true)}
-      />
+    <>
+      <Analytics />
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+        {/* Left Collapsible SaaS Sidebar Navigation */}
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          issuesCount={issuesCount}
+          schemaCount={schemaCount}
+          onOpenGuide={() => setIsGuideOpen(true)}
+        />
 
       {/* Main Content App Shell */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -248,5 +251,6 @@ export default function App() {
       {/* Core Web Vitals Educational Guide Drawer Modal */}
       <WebVitalsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
+    </>
   );
 }
