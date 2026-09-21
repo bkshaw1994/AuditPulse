@@ -1,16 +1,22 @@
 import React from 'react';
-import { ShieldCheck, Zap, Share2, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, Share2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-export default function ScoreCard({ scores = {}, issuesCount = 0, timestamp, domain }) {
+export default function ScoreCard({ scores = {}, issuesCount = 0 }) {
   const overall = scores.overall || 0;
   const seo = scores.seo || 0;
   const performance = scores.performance || 0;
   const social = scores.social || 0;
 
-  const getScoreColor = (val) => {
-    if (val >= 90) return '#059669';
-    if (val >= 70) return '#d97706';
-    return '#e11d48';
+  const getScoreColorClass = (val) => {
+    if (val >= 90) return 'text-emerald-600';
+    if (val >= 70) return 'text-amber-600';
+    return 'text-rose-600';
+  };
+
+  const getScoreBgClass = (val) => {
+    if (val >= 90) return 'bg-emerald-500';
+    if (val >= 70) return 'bg-amber-500';
+    return 'bg-rose-500';
   };
 
   const getScoreLabel = (val) => {
@@ -22,22 +28,14 @@ export default function ScoreCard({ scores = {}, issuesCount = 0, timestamp, dom
   const strokeDashoffset = 283 - (283 * overall) / 100;
 
   return (
-    <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
       {/* Overall Health Card */}
-      <div className="glass-panel" style={{ padding: '22px', display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute',
-          top: '-20px',
-          right: '-20px',
-          width: '120px',
-          height: '120px',
-          background: `radial-gradient(circle, ${getScoreColor(overall)}15 0%, transparent 70%)`,
-          pointerEvents: 'none'
-        }} />
-
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden">
+        
         {/* Dual Ring Circular Gauge */}
-        <div style={{ position: 'relative', width: '92px', height: '92px', flexShrink: 0 }}>
-          <svg width="92" height="92" viewBox="0 0 100 100">
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <svg width="80" height="80" viewBox="0 0 100 100">
             <circle
               cx="50"
               cy="50"
@@ -51,43 +49,37 @@ export default function ScoreCard({ scores = {}, issuesCount = 0, timestamp, dom
               cy="50"
               r="45"
               fill="transparent"
-              stroke={getScoreColor(overall)}
+              className={getScoreColorClass(overall)}
+              stroke="currentColor"
               strokeWidth="8"
               strokeDasharray="283"
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               transform="rotate(-90 50 50)"
-              style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+              style={{ transition: 'stroke-dashoffset 1s ease' }}
             />
           </svg>
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <span style={{ fontSize: '26px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px' }}>{overall}</span>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', tracking: '0.5px', marginTop: '-2px' }}>/ 100</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-extrabold font-mono text-slate-900 tracking-tight">{overall}</span>
+            <span className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">/ 100</span>
           </div>
         </div>
 
         <div>
-          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>
-            Overall SPA Health
+          <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-400">
+            Overall Health
           </span>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginTop: '2px', lineHeight: 1.2 }}>
+          <h3 className="text-base font-bold text-slate-900 leading-tight">
             {getScoreLabel(overall)}
           </h3>
-          <div style={{ fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="mt-1.5 flex items-center gap-1 text-xs">
             {issuesCount === 0 ? (
-              <span className="badge badge-good" style={{ fontSize: '11px' }}>
-                <CheckCircle2 size={12} /> 0 Critical Issues
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 0 Critical Issues
               </span>
             ) : (
-              <span className="badge badge-warn" style={{ fontSize: '11px' }}>
-                ⚠️ {issuesCount} Issue(s) Detected
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-mono font-semibold">
+                <AlertTriangle className="w-3 h-3 text-amber-600" /> {issuesCount} Issue(s)
               </span>
             )}
           </div>
@@ -95,58 +87,59 @@ export default function ScoreCard({ scores = {}, issuesCount = 0, timestamp, dom
       </div>
 
       {/* SEO Score Card */}
-      <div className="glass-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Dynamic SEO Tags</span>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ShieldCheck size={18} color="var(--accent-indigo)" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-600">Dynamic SEO Tags</span>
+          <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+            <ShieldCheck className="w-4 h-4" />
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '30px', fontWeight: '800', color: getScoreColor(seo), letterSpacing: '-0.5px' }}>
-            {seo}<span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>/100</span>
+          <div className={`text-3xl font-extrabold font-mono ${getScoreColorClass(seo)}`}>
+            {seo}<span className="text-xs text-slate-400 font-normal ml-1">/100</span>
           </div>
-          <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
-            <div style={{ width: `${seo}%`, height: '100%', background: getScoreColor(seo), borderRadius: '3px', transition: 'width 0.8s ease' }} />
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+            <div className={`h-full ${getScoreBgClass(seo)} rounded-full transition-all duration-500`} style={{ width: `${seo}%` }} />
           </div>
         </div>
       </div>
 
       {/* Performance Score Card */}
-      <div className="glass-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Core Web Vitals</span>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={18} color="var(--accent-cyan)" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-600">Core Web Vitals</span>
+          <div className="w-8 h-8 rounded-lg bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600">
+            <Zap className="w-4 h-4" />
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '30px', fontWeight: '800', color: getScoreColor(performance), letterSpacing: '-0.5px' }}>
-            {performance}<span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>/100</span>
+          <div className={`text-3xl font-extrabold font-mono ${getScoreColorClass(performance)}`}>
+            {performance}<span className="text-xs text-slate-400 font-normal ml-1">/100</span>
           </div>
-          <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
-            <div style={{ width: `${performance}%`, height: '100%', background: getScoreColor(performance), borderRadius: '3px', transition: 'width 0.8s ease' }} />
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+            <div className={`h-full ${getScoreBgClass(performance)} rounded-full transition-all duration-500`} style={{ width: `${performance}%` }} />
           </div>
         </div>
       </div>
 
       {/* Social Tags Score Card */}
-      <div className="glass-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Social OpenGraph</span>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Share2 size={18} color="var(--accent-purple)" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-600">Social OpenGraph</span>
+          <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+            <Share2 className="w-4 h-4" />
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '30px', fontWeight: '800', color: getScoreColor(social), letterSpacing: '-0.5px' }}>
-            {social}<span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>/100</span>
+          <div className={`text-3xl font-extrabold font-mono ${getScoreColorClass(social)}`}>
+            {social}<span className="text-xs text-slate-400 font-normal ml-1">/100</span>
           </div>
-          <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
-            <div style={{ width: `${social}%`, height: '100%', background: getScoreColor(social), borderRadius: '3px', transition: 'width 0.8s ease' }} />
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+            <div className={`h-full ${getScoreBgClass(social)} rounded-full transition-all duration-500`} style={{ width: `${social}%` }} />
           </div>
         </div>
       </div>
+
     </div>
   );
 }

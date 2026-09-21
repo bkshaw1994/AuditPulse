@@ -1,18 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ShieldAlert,
-  CheckCircle2,
-  AlertTriangle,
-  FileSpreadsheet,
-  Copy,
-  Check,
-  Zap,
-  Globe,
-  HelpCircle,
-  ExternalLink,
-  Sparkles,
-  ArrowRight
-} from 'lucide-react';
+import { ShieldAlert, CheckCircle2, FileSpreadsheet, Copy, Check, HelpCircle, Sparkles } from 'lucide-react';
 
 export default function ExecutiveSummary({ audit = {}, onOpenGuide }) {
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -23,13 +10,10 @@ export default function ExecutiveSummary({ audit = {}, onOpenGuide }) {
   const criticalIssues = issues.filter(i => i.severity === 'critical');
   const warningIssues = issues.filter(i => i.severity === 'warning');
 
-  // Compute Indexability Status
   const hasTitle = !!seoMeta.title;
-  const hasDesc = !!seoMeta.description;
   const isNoIndex = (seoMeta.robots || '').toLowerCase().includes('noindex');
   const isIndexable = hasTitle && !isNoIndex && scores.overall >= 50;
 
-  // Generate shareable text summary for Slack/Email
   const generateTextSummary = () => {
     return `📊 SPA SEO & Core Web Vitals Audit Report for ${url}
 • Overall Health Score: ${scores.overall}/100
@@ -76,81 +60,90 @@ export default function ExecutiveSummary({ audit = {}, onOpenGuide }) {
   };
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      {/* Executive Overview Banner */}
-      <div className="glass-panel" style={{ padding: '24px', background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid #cbd5e1' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: isIndexable ? '#ecfdf5' : '#fff1f2',
-              border: `1px solid ${isIndexable ? '#a7f3d0' : '#fecdd3'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              {isIndexable ? <CheckCircle2 size={24} color="#059669" /> : <ShieldAlert size={24} color="#e11d48" />}
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
-                  Executive SPA Audit Summary
-                </h3>
-                {isIndexable ? (
-                  <span className="badge badge-good">✓ Search Engine Indexable</span>
-                ) : (
-                  <span className="badge badge-poor">⚠️ Indexability Issues Detected</span>
-                )}
-              </div>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Key findings and prioritized action items for SEO & Growth teams
-              </p>
-            </div>
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 space-y-6">
+      
+      {/* Top Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+            isIndexable ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-rose-50 border-rose-200 text-rose-600'
+          }`}>
+            {isIndexable ? <CheckCircle2 className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
           </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn-secondary" onClick={onOpenGuide} style={{ fontSize: '12px', background: '#e0e7ff', borderColor: '#c7d2fe', color: '#3730a3' }}>
-              <HelpCircle size={14} /> Core Web Vitals Guide
-            </button>
-            <button className="btn-secondary" onClick={handleCopyTextSummary} style={{ fontSize: '12px' }}>
-              {copiedSummary ? <Check size={14} color="#059669" /> : <Copy size={14} />}
-              {copiedSummary ? 'Summary Copied' : 'Copy Summary'}
-            </button>
-            <button className="btn-secondary" onClick={handleExportCsv} style={{ fontSize: '12px' }}>
-              <FileSpreadsheet size={14} color="#059669" /> Export CSV
-            </button>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900">
+                Executive SPA Audit Summary
+              </h3>
+              {isIndexable ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono font-semibold">
+                  ✓ Search Engine Indexable
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono font-semibold">
+                  ⚠️ Indexability Issues Detected
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Key findings and prioritized action items for frontend performance & SEO
+            </p>
           </div>
         </div>
 
-        {/* Top 3 Prioritized Actionable Fixes */}
-        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '18px', border: '1px solid #e2e8f0' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={16} color="var(--accent-indigo)" /> Top Recommended Fixes for Immediate Ranking Boost:
-          </h4>
-
-          {issues.length === 0 ? (
-            <div style={{ fontSize: '13px', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={16} /> All core checks passed! No priority fixes required.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {issues.slice(0, 3).map((issue, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '13px', background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontWeight: '700', color: issue.severity === 'critical' ? '#e11d48' : '#d97706', minWidth: '20px' }}>
-                    #{idx + 1}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <strong style={{ color: '#0f172a' }}>{issue.title}: </strong>
-                    <span style={{ color: '#475569' }}>{issue.description}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={onOpenGuide}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors shadow-sm"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Core Web Vitals Guide</span>
+          </button>
+          <button
+            onClick={handleCopyTextSummary}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors shadow-sm"
+          >
+            {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{copiedSummary ? 'Summary Copied' : 'Copy Summary'}</span>
+          </button>
+          <button
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors shadow-sm"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
+
+      {/* Top 3 Actionable Fixes */}
+      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+        <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-900 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-600" />
+          Top Recommended Fixes for Immediate Performance Boost:
+        </h4>
+
+        {issues.length === 0 ? (
+          <div className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
+            <CheckCircle2 className="w-4 h-4" /> All core checks passed! No priority fixes required.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {issues.slice(0, 3).map((issue, idx) => (
+              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-white border border-slate-200 text-xs shadow-sm">
+                <span className={`font-mono font-bold ${issue.severity === 'critical' ? 'text-rose-600' : 'text-amber-600'}`}>
+                  #{idx + 1}
+                </span>
+                <div className="flex-1">
+                  <strong className="text-slate-900 font-semibold">{issue.title}: </strong>
+                  <span className="text-slate-600">{issue.description}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

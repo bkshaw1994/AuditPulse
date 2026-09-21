@@ -1,0 +1,14 @@
+{
+  "name": "auditpulse-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "start": "cd backend && npm start",
+    "auditpulse": "node cli/bin/auditpulse.js"
+  },
+  "dependencies": {
+    "@auditpulse/cli": "file:cli"
+  }
+}

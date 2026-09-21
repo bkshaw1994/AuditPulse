@@ -6,7 +6,9 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { connectDB } = require('./config/db');
 const auditRoutes = require('./routes/audit');
+const flagRoutes = require('./routes/flags');
 const { CrawlResultRepository } = require('./models/CrawlResult');
+const { FeatureFlagRepository } = require('./models/FeatureFlag');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
@@ -72,6 +74,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 6. Routes
 app.use('/api/audit', auditRoutes);
+app.use('/api/flags', flagRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -216,6 +219,14 @@ async function seedInitialDataIfEmpty() {
       }
       console.log('[Seed] Demo data successfully seeded!');
     }
+
+    // Seed default DB feature flags (Flag CLI, Pricing, and React Provider SDK off as requested)
+    await FeatureFlagRepository.setFlag('showCliFeature', false, 'Toggle CLI feature widget & docs');
+    await FeatureFlagRepository.setFlag('showPricingFeature', false, 'Toggle Pricing section & nav link');
+    await FeatureFlagRepository.setFlag('showReactProviderFeature', false, 'Toggle React Provider SDK code showcase');
+    await FeatureFlagRepository.setFlag('showLiveDemo', true, 'Toggle Live Demo sandbox');
+    await FeatureFlagRepository.setFlag('showFeaturesGrid', true, 'Toggle Features grid');
+    console.log('[Seed] DB Feature Flags initialized: { showCliFeature: false, showPricingFeature: false, showReactProviderFeature: false }');
   } catch (err) {
     console.error('[Seed Error]', err);
   }

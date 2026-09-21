@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, Clock, Layers, Cpu, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
+import { Gauge, Clock, Layers, Cpu, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function WebVitalsCard({ metrics = {} }) {
   const formatMs = (val) => (val >= 1000 ? `${(val / 1000).toFixed(2)}s` : `${val || 0}ms`);
@@ -15,137 +15,129 @@ export default function WebVitalsCard({ metrics = {} }) {
   const isCwvPassing = isLcpGood && isTtfbGood && isClsGood;
 
   const getLcpBadge = (val) => {
-    if (val <= 2500) return <span className="badge badge-good">Good (&le;2.5s)</span>;
-    if (val <= 4000) return <span className="badge badge-warn">Needs Work (&le;4.0s)</span>;
-    return <span className="badge badge-poor">Poor (&gt;4.0s)</span>;
+    if (val <= 2500) return <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">Good (&le;2.5s)</span>;
+    if (val <= 4000) return <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-mono font-semibold">Needs Work (&le;4.0s)</span>;
+    return <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-mono font-semibold">Poor (&gt;4.0s)</span>;
   };
 
   const getTtfbBadge = (val) => {
-    if (val <= 800) return <span className="badge badge-good">Good (&le;800ms)</span>;
-    if (val <= 1800) return <span className="badge badge-warn">Needs Work (&le;1.8s)</span>;
-    return <span className="badge badge-poor">Poor (&gt;1.8s)</span>;
+    if (val <= 800) return <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">Good (&le;800ms)</span>;
+    if (val <= 1800) return <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-mono font-semibold">Needs Work (&le;1.8s)</span>;
+    return <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-mono font-semibold">Poor (&gt;1.8s)</span>;
   };
 
   const getClsBadge = (val) => {
-    if (val <= 0.1) return <span className="badge badge-good">Good (&le;0.1)</span>;
-    if (val <= 0.25) return <span className="badge badge-warn">Needs Work (&le;0.25)</span>;
-    return <span className="badge badge-poor">Poor (&gt;0.25)</span>;
+    if (val <= 0.1) return <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">Good (&le;0.1)</span>;
+    if (val <= 0.25) return <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-mono font-semibold">Needs Work (&le;0.25)</span>;
+    return <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-mono font-semibold">Poor (&gt;0.25)</span>;
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Gauge size={20} color="var(--accent-cyan)" />
+          <div className="flex items-center gap-2.5">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Gauge className="w-5 h-5 text-indigo-600" />
               Core Web Vitals & SPA Hydration Metrics
             </h3>
             {isCwvPassing ? (
-              <span className="badge badge-good" style={{ fontSize: '11px' }}>
-                <CheckCircle2 size={12} /> Google CWV: PASSED
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Google CWV: PASSED
               </span>
             ) : (
-              <span className="badge badge-warn" style={{ fontSize: '11px' }}>
-                <AlertTriangle size={12} /> Google CWV: NEEDS OPTIMIZATION
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-mono font-semibold">
+                <AlertTriangle className="w-3 h-3 text-amber-600" /> Google CWV: NEEDS WORK
               </span>
             )}
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+          <p className="text-xs text-slate-500 mt-1">
             Extracted via native browser PerformanceObserver after client JS DOM mounting
           </p>
         </div>
       </div>
 
-      <div className="grid-cols-4" style={{ marginBottom: '20px' }}>
+      {/* Metrics Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* LCP */}
-        <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Largest Contentful Paint</span>
-              <Clock size={16} color="var(--accent-indigo)" />
+            <div className="flex justify-between items-center mb-1 text-xs text-slate-600 font-medium">
+              <span>Largest Contentful (LCP)</span>
+              <Clock className="w-4 h-4 text-indigo-600" />
             </div>
-            <div className="mono" style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <div className="font-mono text-2xl font-bold text-slate-900">
               {formatMs(lcp)}
             </div>
           </div>
-          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
             {getLcpBadge(lcp)}
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Target: &le;2.5s</span>
+            <span className="text-[10px] font-mono text-slate-400">&le;2.5s</span>
           </div>
         </div>
 
         {/* TTFB */}
-        <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Time to First Byte (TTFB)</span>
-              <Gauge size={16} color="var(--accent-cyan)" />
+            <div className="flex justify-between items-center mb-1 text-xs text-slate-600 font-medium">
+              <span>Time to First Byte (TTFB)</span>
+              <Gauge className="w-4 h-4 text-cyan-600" />
             </div>
-            <div className="mono" style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <div className="font-mono text-2xl font-bold text-slate-900">
               {formatMs(ttfb)}
             </div>
           </div>
-          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
             {getTtfbBadge(ttfb)}
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Target: &le;800ms</span>
+            <span className="text-[10px] font-mono text-slate-400">&le;800ms</span>
           </div>
         </div>
 
-        {/* TTI / SPA Hydration */}
-        <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* TTI */}
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Time to Interactive (TTI)</span>
-              <Cpu size={16} color="var(--accent-purple)" />
+            <div className="flex justify-between items-center mb-1 text-xs text-slate-600 font-medium">
+              <span>Time to Interactive (TTI)</span>
+              <Cpu className="w-4 h-4 text-purple-600" />
             </div>
-            <div className="mono" style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <div className="font-mono text-2xl font-bold text-slate-900">
               {formatMs(tti)}
             </div>
           </div>
-          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="badge badge-good">Hydration Complete</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Target: &le;3.8s</span>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono font-semibold">Hydration Complete</span>
+            <span className="text-[10px] font-mono text-slate-400">&le;3.8s</span>
           </div>
         </div>
 
         {/* CLS */}
-        <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Cumulative Layout Shift</span>
-              <Layers size={16} color="var(--accent-pink)" />
+            <div className="flex justify-between items-center mb-1 text-xs text-slate-600 font-medium">
+              <span>Cumulative Layout Shift</span>
+              <Layers className="w-4 h-4 text-pink-600" />
             </div>
-            <div className="mono" style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <div className="font-mono text-2xl font-bold text-slate-900">
               {cls}
             </div>
           </div>
-          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
             {getClsBadge(cls)}
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Target: &le;0.1</span>
+            <span className="text-[10px] font-mono text-slate-400">&le;0.1</span>
           </div>
         </div>
       </div>
 
       {/* Resource & Memory Strip */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 18px',
-        borderRadius: '10px',
-        background: '#f8fafc',
-        border: '1px solid #e2e8f0',
-        fontSize: '13px',
-        color: 'var(--text-secondary)',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
-        <div>First Contentful Paint (FCP): <strong style={{ color: '#0f172a' }}>{formatMs(metrics.fcp)}</strong></div>
-        <div>Total HTTP Requests: <strong style={{ color: '#0f172a' }}>{metrics.totalRequests || 0}</strong></div>
-        <div>Page Bundle Size: <strong style={{ color: '#0f172a' }}>{metrics.totalPageSizeKB || 0} KB</strong></div>
-        <div>JS Heap Usage: <strong style={{ color: '#0f172a' }}>{metrics.jsHeapSizeKB || 0} KB</strong></div>
+      <div className="flex flex-wrap items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-600 gap-3">
+        <div>First Contentful Paint (FCP): <strong className="text-slate-900">{formatMs(metrics.fcp)}</strong></div>
+        <div>Total HTTP Requests: <strong className="text-slate-900">{metrics.totalRequests || 0}</strong></div>
+        <div>Page Bundle Size: <strong className="text-slate-900">{metrics.totalPageSizeKB || 0} KB</strong></div>
+        <div>JS Heap Usage: <strong className="text-slate-900">{metrics.jsHeapSizeKB || 0} KB</strong></div>
       </div>
+
     </div>
   );
 }

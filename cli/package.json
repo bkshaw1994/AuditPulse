@@ -1,0 +1,11 @@
+{
+  "name": "@auditpulse/cli",
+  "version": "2.4.0",
+  "description": "Continuous Core Web Vitals and main-thread monitoring CLI for React SPAs",
+  "main": "bin/auditpulse.js",
+  "bin": {
+    "auditpulse": "bin/auditpulse.js"
+  },
+  "type": "module",
+  "dependencies": {}
+}
