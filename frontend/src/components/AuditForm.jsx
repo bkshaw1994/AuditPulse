@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Play, Sparkles, CheckCircle2, Cpu } from 'lucide-react';
+import { Search, Loader2, Play, Sparkles, Cpu } from 'lucide-react';
 
 export default function AuditForm({ onAuditTrigger, isLoading, error }) {
   const [url, setUrl] = useState('https://react.dev');
@@ -38,51 +38,51 @@ export default function AuditForm({ onAuditTrigger, isLoading, error }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '26px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        width: '320px',
-        height: '100%',
-        background: 'radial-gradient(circle at 100% 0%, rgba(79, 70, 229, 0.05), transparent 70%)',
-        pointerEvents: 'none'
-      }} />
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden space-y-4">
+      
+      {/* Decorative Glow */}
+      <div className="absolute top-0 right-0 w-80 h-full bg-gradient-radial from-indigo-500/10 to-transparent pointer-events-none" />
 
-      <div style={{ marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '19px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={20} color="var(--accent-indigo)" />
+      <div>
+        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-indigo-600" />
           Audit SPA SEO & Core Web Vitals
         </h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+        <p className="text-xs text-slate-500 mt-1">
           Enter any Single Page Application URL. Puppeteer will execute client JS, wait for DOM hydration, and extract dynamic metadata.
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
-            <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <Search className="w-4 h-4" />
+            </div>
             <input
               type="text"
-              className="glass-input"
-              style={{ width: '100%', paddingLeft: '46px', background: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm font-mono placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all shadow-inner"
               placeholder="e.g. https://my-react-app.com"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={isLoading}
             />
           </div>
-          <button type="submit" className="btn-primary" disabled={isLoading}>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+          >
             {isLoading ? (
               <>
-                <Loader2 size={18} className="spinner" />
-                Auditing SPA...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Auditing SPA...</span>
               </>
             ) : (
               <>
-                <Play size={18} />
-                Run Full Audit
+                <Play className="w-4 h-4 fill-white" />
+                <span>Run Full Audit</span>
               </>
             )}
           </button>
@@ -90,16 +90,19 @@ export default function AuditForm({ onAuditTrigger, isLoading, error }) {
       </form>
 
       {/* Preset Buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Try presets:</span>
+      <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-500">
+        <span>Try presets:</span>
         {presets.map((preset) => (
           <button
             key={preset.url}
             type="button"
-            className={`btn-secondary ${url === preset.url ? 'active' : ''}`}
             onClick={() => setUrl(preset.url)}
             disabled={isLoading}
-            style={{ fontSize: '12px', padding: '5px 12px' }}
+            className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-colors ${
+              url === preset.url
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
           >
             {preset.label}
           </button>
@@ -108,43 +111,29 @@ export default function AuditForm({ onAuditTrigger, isLoading, error }) {
 
       {/* Progress Status Bar */}
       {isLoading && (
-        <div style={{
-          marginTop: '20px',
-          padding: '16px',
-          borderRadius: '12px',
-          background: '#f8fafc',
-          border: '1px solid #c7d2fe'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#3730a3', fontWeight: 600 }}>
-              <Cpu size={16} className="spinner" color="#4f46e5" />
+        <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 font-semibold text-indigo-900">
+              <Cpu className="w-4 h-4 text-indigo-600 animate-spin" />
               <span>{auditSteps[stepIndex]}</span>
             </div>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Step {stepIndex + 1} of {auditSteps.length}</span>
+            <span className="font-mono text-slate-500">
+              Step {stepIndex + 1} of {auditSteps.length}
+            </span>
           </div>
 
-          <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{
-              width: `${((stepIndex + 1) / auditSteps.length) * 100}%`,
-              height: '100%',
-              background: 'linear-gradient(90deg, #4f46e5, #0284c7)',
-              transition: 'width 0.4s ease'
-            }} />
+          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-600 transition-all duration-300 rounded-full"
+              style={{ width: `${((stepIndex + 1) / auditSteps.length) * 100}%` }}
+            />
           </div>
         </div>
       )}
 
       {/* Error Alert */}
       {error && (
-        <div style={{
-          marginTop: '16px',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          background: 'var(--status-poor-bg)',
-          border: '1px solid var(--status-poor-border)',
-          color: 'var(--status-poor)',
-          fontSize: '13px'
-        }}>
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono">
           ⚠️ Audit Error: {error}
         </div>
       )}
