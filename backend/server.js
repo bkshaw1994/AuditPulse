@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const { connectDB } = require('./config/db');
 const auditRoutes = require('./routes/audit');
 const flagRoutes = require('./routes/flags');
+const billingRoutes = require('./routes/billing');
 const { CrawlResultRepository } = require('./models/CrawlResult');
 const { FeatureFlagRepository } = require('./models/FeatureFlag');
 
@@ -75,6 +76,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // 6. Routes
 app.use('/api/audit', auditRoutes);
 app.use('/api/flags', flagRoutes);
+app.use('/api/billing', billingRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

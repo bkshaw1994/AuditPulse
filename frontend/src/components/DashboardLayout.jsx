@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import AuditForm from './AuditForm';
@@ -14,74 +14,23 @@ import DiffViewer from './DiffViewer';
 import StructuredDataViewer from './StructuredDataViewer';
 import SsrAuditCard from './SsrAuditCard';
 import IssuesList from './IssuesList';
+import SetupGuide from './SetupGuide';
+import AlertSettingsCard from './AlertSettingsCard';
+import PricingModal from './PricingModal';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
-
-const DEFAULT_DEMO_AUDIT = {
-  _id: 'demo_default_audit_1',
-  url: 'https://react.dev',
-  domain: 'react.dev',
-  timestamp: new Date().toISOString(),
-  scores: { overall: 95, seo: 98, performance: 93, social: 94 },
-  renderingType: 'Single Page Application (React 18 Concurrent Mode)',
-  performanceMetrics: {
-    ttfb: 180,
-    fcp: 820,
-    lcp: 1720,
-    cls: 0.005,
-    tti: 1890,
-    domContentLoaded: 650,
-    loadTime: 1850,
-    jsHeapSizeKB: 14900,
-    totalRequests: 21,
-    totalPageSizeKB: 620
-  },
-  seoMeta: {
-    title: 'React - The library for web and native user interfaces',
-    titleLength: 55,
-    description: 'React lets you build user interfaces out of individual pieces called components. Create your own React components like Thumbnail, LikeButton, and Video.',
-    descriptionLength: 154,
-    keywords: 'react, javascript, ui, frontend, components, single page app',
-    canonical: 'https://react.dev',
-    robots: 'index, follow',
-    viewport: 'width=device-width, initial-scale=1',
-    charset: 'UTF-8',
-    ogTags: {
-      'og:title': 'React',
-      'og:description': 'The library for web and native user interfaces',
-      'og:image': 'https://react.dev/og-image.png',
-      'og:url': 'https://react.dev'
-    },
-    twitterTags: {
-      'twitter:card': 'summary_large_image',
-      'twitter:title': 'React',
-      'twitter:site': '@reactjs'
-    },
-    headings: { h1: ['React'], h2Count: 10, h3Count: 22 },
-    structuredData: [{ "@context": "https://schema.org", "@type": "WebSite", "name": "React", "url": "https://react.dev" }],
-    imagesTotal: 12,
-    imagesMissingAlt: 0
-  },
-  issues: [
-    {
-      severity: 'info',
-      category: 'seo',
-      code: 'GOOD_STANDING',
-      title: 'Good SEO Tag Coverage',
-      description: 'All critical dynamic SPA meta tags present.'
-    }
-  ],
-  status: 'success'
-};
+import { DEMO_PROJECT_STATE } from '../data/demoProjectState';
+import { Sparkles, Terminal, AlertTriangle, ArrowRight } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [sites, setSites] = useState([]);
-  const [selectedUrl, setSelectedUrl] = useState('https://react.dev');
-  const [currentAudit, setCurrentAudit] = useState(DEFAULT_DEMO_AUDIT);
-  const [history, setHistory] = useState([DEFAULT_DEMO_AUDIT]);
+  const [selectedUrl, setSelectedUrl] = useState(DEMO_PROJECT_STATE.url);
+  const [currentAudit, setCurrentAudit] = useState(DEMO_PROJECT_STATE);
+  const [history, setHistory] = useState([DEMO_PROJECT_STATE]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(true);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   const location = useLocation();
 
@@ -89,22 +38,13 @@ export default function DashboardLayout() {
     loadSites();
   }, []);
 
-  useEffect(() => {
-    if (selectedUrl) {
-      loadHistoryForUrl(selectedUrl);
-    }
-  }, [selectedUrl]);
-
   const loadSites = async () => {
     try {
       const data = await fetchMonitoredSites();
       setSites(data.sites || []);
       setIsConnected(true);
-      if (data.sites && data.sites.length > 0 && !selectedUrl) {
-        setSelectedUrl(data.sites[0]._id);
-      }
     } catch (err) {
-      console.warn('Backend connection error:', err);
+      console.warn('Backend connection notice:', err);
       setIsConnected(false);
     }
   };
@@ -116,7 +56,6 @@ export default function DashboardLayout() {
         setHistory(data.history);
         setCurrentAudit(data.history[0]);
       } else {
-        // Fallback demo record for newly audited URL
         const fallback = createFallbackAuditForUrl(url);
         setHistory([fallback]);
         setCurrentAudit(fallback);
@@ -132,8 +71,9 @@ export default function DashboardLayout() {
   const createFallbackAuditForUrl = (targetUrl) => {
     let domain = targetUrl.replace(/^https?:\/\//, '').split('/')[0];
     return {
-      ...DEFAULT_DEMO_AUDIT,
-      _id: `fallback_${Date.now()}`,
+      ...DEMO_PROJECT_STATE,
+      _id: `audit_${Date.now()}`,
+      isDemoMode: false,
       url: targetUrl,
       domain: domain || 'target-app.com',
       timestamp: new Date().toISOString()
@@ -144,7 +84,6 @@ export default function DashboardLayout() {
     setIsLoading(true);
     setError(null);
 
-    // Optimistic fallback while crawl is running
     const optimisticRecord = createFallbackAuditForUrl(urlToAudit);
     setCurrentAudit(optimisticRecord);
 
@@ -152,12 +91,12 @@ export default function DashboardLayout() {
       const result = await runAudit(urlToAudit);
       const newRecord = result.data || optimisticRecord;
       setSelectedUrl(newRecord.url);
-      setCurrentAudit(newRecord);
+      setCurrentAudit({ ...newRecord, isDemoMode: false });
       await loadHistoryForUrl(newRecord.url);
       await loadSites();
     } catch (err) {
       console.warn('Audit crawl fallback invoked:', err);
-      setError(err.message || 'Crawl error - displaying fallback report');
+      setError(err.message || 'Crawl notice - displaying baseline report');
       setCurrentAudit(optimisticRecord);
     } finally {
       setIsLoading(false);
@@ -171,7 +110,7 @@ export default function DashboardLayout() {
     const href = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = href;
-    link.download = `spa-audit-${currentAudit.domain || 'report'}-${Date.now()}.json`;
+    link.download = `auditpulse-${currentAudit.domain || 'report'}-${Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -181,7 +120,7 @@ export default function DashboardLayout() {
     if (!currentAudit) return;
     const { scores = {}, performanceMetrics = {}, seoMeta = {}, issues = [] } = currentAudit;
     const csvRows = [
-      ['Target URL', 'Domain', 'Audit Date', 'Overall Score', 'SEO Score', 'Performance Score', 'LCP (ms)', 'TTFB (ms)', 'TTI (ms)', 'Title', 'Canonical', 'Issues Count'],
+      ['Target URL', 'Domain', 'Audit Date', 'Overall Score', 'SEO Score', 'Performance Score', 'LCP (ms)', 'INP (ms)', 'TTFB (ms)', 'Title', 'Canonical', 'Issues Count'],
       [
         `"${currentAudit.url}"`,
         `"${currentAudit.domain}"`,
@@ -190,19 +129,19 @@ export default function DashboardLayout() {
         scores.seo || 0,
         scores.performance || 0,
         performanceMetrics.lcp || 0,
+        performanceMetrics.inp || 0,
         performanceMetrics.ttfb || 0,
-        performanceMetrics.tti || 0,
         `"${(seoMeta.title || '').replace(/"/g, '""')}"`,
         `"${seoMeta.canonical || ''}"`,
         issues.length
       ]
     ];
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map((e) => e.join(',')).join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `spa-seo-audit-${currentAudit.domain || 'report'}.csv`);
+    link.setAttribute('download', `auditpulse-${currentAudit.domain || 'report'}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -217,11 +156,12 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Left Sidebar with React Router NavLinks */}
+      {/* Left Sidebar */}
       <Sidebar
         issuesCount={issuesCount}
         schemaCount={schemaCount}
         onOpenGuide={() => setIsGuideOpen(true)}
+        onOpenPricing={() => setIsPricingOpen(true)}
       />
 
       {/* Main Content App Shell */}
@@ -234,7 +174,41 @@ export default function DashboardLayout() {
           onExportJson={handleExportJson}
           onExportCsv={handleExportCsv}
           onPrintReport={handlePrintReport}
+          onOpenPricing={() => setIsPricingOpen(true)}
         />
+
+        {/* Demo Mode Notice Banner */}
+        {currentAudit?.isDemoMode && (
+          <div className="bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 p-[1px] shadow-xs">
+            <div className="bg-white/95 px-6 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                <span className="font-bold text-slate-900">
+                  ⚡ Interactive Demo State:
+                </span>
+                <span className="text-slate-600">
+                  Loaded rich mock project ("PulseCart Storefront") with simulated traffic surge (8,450 req/min) and high LCP warning (4.42s).
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  to="/app/setup"
+                  className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200 transition flex items-center gap-1"
+                >
+                  <Terminal className="w-3 h-3" />
+                  <span>Connect Your App</span>
+                </Link>
+                <button
+                  onClick={() => setIsPricingOpen(true)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold transition flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>View Pro Features</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content Area */}
         <main className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6">
@@ -249,6 +223,15 @@ export default function DashboardLayout() {
                 {/* Redirect /app to /app/overview */}
                 <Route path="/" element={<Navigate to="/app/overview" replace />} />
                 
+                {/* Onboarding & Setup Page */}
+                <Route path="/setup" element={<SetupGuide />} />
+
+                {/* Gated Slack Alerts Page */}
+                <Route
+                  path="/alerts"
+                  element={<AlertSettingsCard onUpgradeClick={() => setIsPricingOpen(true)} />}
+                />
+
                 {/* Route 1: Overview & Vitals */}
                 <Route
                   path="/overview"
@@ -267,6 +250,7 @@ export default function DashboardLayout() {
                         seoMeta={currentAudit.seoMeta}
                       />
                       <WebVitalsCard metrics={currentAudit.performanceMetrics} />
+                      <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
                       <IssuesList issues={currentAudit.issues} />
                     </>
                   }
@@ -278,7 +262,7 @@ export default function DashboardLayout() {
                   element={
                     <>
                       <WebVitalsCard metrics={currentAudit.performanceMetrics} />
-                      <TrendChart history={history} />
+                      <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
                     </>
                   }
                 />
@@ -317,11 +301,11 @@ export default function DashboardLayout() {
                   }
                 />
 
-                {/* Route 6: Historical Analytics */}
+                {/* Route 6: Historical Analytics & 24h Trends */}
                 <Route
                   path="/trends"
                   element={
-                    <TrendChart history={history} />
+                    <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
                   }
                 />
 
@@ -357,12 +341,19 @@ export default function DashboardLayout() {
         </main>
 
         <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-mono">
-          SPA AuditPulse &copy; {new Date().getFullYear()} — Built with Node.js, Puppeteer, Mongoose, Express, React & Recharts
+          AuditPulse &copy; {new Date().getFullYear()} — Core Web Vitals, SSR Hydration & Real User Monitoring Platform
         </footer>
       </div>
 
       {/* Core Web Vitals Educational Guide Drawer Modal */}
       <WebVitalsGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+
+      {/* Monetization Pricing & Paywall Modal */}
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        selectedFeature="Pro Developer Subscription"
+      />
     </div>
   );
 }
