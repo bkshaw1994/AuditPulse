@@ -17,6 +17,7 @@ import IssuesList from './IssuesList';
 import SetupGuide from './SetupGuide';
 import AlertSettingsCard from './AlertSettingsCard';
 import PricingModal from './PricingModal';
+import FullAuditReport from './FullAuditReport';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
 import { DEMO_PROJECT_STATE } from '../data/demoProjectState';
 import { Sparkles, Terminal, AlertTriangle, ArrowRight } from 'lucide-react';
@@ -325,11 +326,50 @@ export default function DashboardLayout() {
                   }
                 />
 
+                {/* Route: Comprehensive Full Audit Report */}
+                <Route
+                  path="/report"
+                  element={
+                    <FullAuditReport
+                      audit={currentAudit}
+                      onOpenPricing={() => setIsPricingOpen(true)}
+                      onOpenGuide={() => setIsGuideOpen(true)}
+                    />
+                  }
+                />
+
                 {/* Route 9: Diagnostics & Fixes */}
                 <Route
                   path="/diagnostics"
                   element={
-                    <IssuesList issues={currentAudit.issues} />
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs font-mono">
+                              ACTION CENTER
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {currentAudit.issues?.length || 0} Issues Detected
+                            </span>
+                          </div>
+                          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                            Production Code Fix Center
+                          </h2>
+                          <p className="text-xs text-slate-600 mt-1 max-w-xl">
+                            Root causes, target file paths, step-by-step instructions, and ready-to-copy code fixes to eliminate Core Web Vitals penalties.
+                          </p>
+                        </div>
+                        <Link
+                          to="/app/report"
+                          className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs shrink-0 flex items-center gap-1.5"
+                        >
+                          <span>Full Audit Report</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                      <IssuesList issues={currentAudit.issues} />
+                    </div>
                   }
                 />
 
