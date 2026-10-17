@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal } from 'lucide-react';
+import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal, FileText } from 'lucide-react';
 
 export default function Navbar({ currentAudit, isConnected, onExportJson, onPrintReport, onExportCsv, onOpenPricing }) {
   return (
@@ -41,6 +41,15 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
 
       {/* Action Controls & Health Status */}
       <div className="flex items-center gap-3">
+        <Link
+          to="/app/report"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs"
+          title="View Full Audit Report & Optimization Roadmap"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Full Audit Report</span>
+        </Link>
+
         <Link
           to="/app/setup"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-sm"

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
   Terminal, 
@@ -63,22 +64,21 @@ export default function HeroSection({ onLaunchDemo, flags = {} }) {
 
           {/* Action CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="#demo"
-              onClick={onLaunchDemo}
+            <Link
+              to="/app/report"
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base shadow-xl shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
             >
-              <span>Start Auditing for Free</span>
+              <span>View Full Audit Report</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
+            </Link>
 
-            <a
-              href="#demo"
+            <Link
+              to="/app/overview"
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-800 font-medium text-base shadow-sm transition-all flex items-center justify-center gap-2 group"
             >
               <Play className="w-4 h-4 text-indigo-600 fill-indigo-100 group-hover:scale-110 transition-transform" />
-              <span>View Live Demo</span>
-            </a>
+              <span>Launch Studio Demo</span>
+            </Link>
           </div>
 
           {/* CLI One-liner Copy Box (Controlled by DB feature flag) */}

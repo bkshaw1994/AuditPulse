@@ -18,6 +18,7 @@ import SetupGuide from './SetupGuide';
 import AlertSettingsCard from './AlertSettingsCard';
 import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
+import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
 import { DEMO_PROJECT_STATE } from '../data/demoProjectState';
 import { Sparkles, Terminal, ArrowRight } from 'lucide-react';
@@ -243,6 +244,11 @@ export default function DashboardLayout() {
                         timestamp={currentAudit.timestamp}
                         domain={currentAudit.domain}
                       />
+                      {/* Priority Score Improvement Action Plan */}
+                      <ScoreImprovementAdvisor
+                        audit={currentAudit}
+                        onOpenGuide={() => setIsGuideOpen(true)}
+                      />
                       <SsrAuditCard
                         renderingType={currentAudit.renderingType}
                         ssrMeta={currentAudit.ssrMeta}
@@ -252,6 +258,17 @@ export default function DashboardLayout() {
                       <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
                       <IssuesList issues={currentAudit.issues} />
                     </>
+                  }
+                />
+
+                {/* Route: Dedicated Score Improvement Advisor */}
+                <Route
+                  path="/advisor"
+                  element={
+                    <ScoreImprovementAdvisor
+                      audit={currentAudit}
+                      onOpenGuide={() => setIsGuideOpen(true)}
+                    />
                   }
                 />
 

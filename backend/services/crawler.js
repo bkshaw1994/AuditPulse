@@ -846,11 +846,26 @@ function analyzeSeoAndPerformance(seoMeta, ssrMeta = {}, renderingType = 'CSR', 
   const socialPoints = socialResult.points;
   const perfPoints = perfResult.points;
 
-  const issues = [
+  const rawIssues = [
     ...seoResult.issues,
     ...socialResult.issues,
     ...perfResult.issues
   ];
+
+  const issues = rawIssues.map((issue) => ({
+    ...issue,
+    whatToFix: issue.whatToFix || issue.description,
+    whereToFix: issue.whereToFix || (
+      issue.category === 'seo' ? 'frontend/index.html (<head>)' :
+      issue.category === 'social' ? 'frontend/index.html (OpenGraph tags)' :
+      issue.category === 'performance' ? 'frontend/index.html & vite.config.js (Asset Loading)' :
+      'frontend/src/components/ (React Tree)'
+    ),
+    howToFix: issue.howToFix || issue.solution || 'Update component markup and pre-rendering hooks to conform with Core Web Vitals and SEO standards.',
+    estimatedImpact: issue.estimatedImpact || (
+      issue.severity === 'critical' ? '⚡ Eliminates critical score penalty (+15-25 points)' : '⚡ Improves score by +5-15 points'
+    )
+  }));
 
   const overall = Math.round(seoPoints * 0.45 + perfPoints * 0.45 + socialPoints * 0.1);
 

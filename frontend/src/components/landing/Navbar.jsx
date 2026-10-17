@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Activity, Menu, X, ArrowRight, Sparkles, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, Menu, X, ArrowRight, Sparkles, LayoutDashboard, FileText } from 'lucide-react';
 
 export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,7 +15,7 @@ export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) 
         
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
-          <a href="#" className="flex items-center gap-2.5 group">
+          <Link to="/" className="flex items-center gap-2.5 group">
             <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 p-[1px] shadow-sm group-hover:scale-105 transition-transform">
               <div className="w-full h-full bg-white rounded-[11px] flex items-center justify-center">
                 <Activity className="w-5 h-5 text-indigo-600 animate-pulse" />
@@ -25,7 +26,7 @@ export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) 
                 AuditPulse <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold tracking-wider">PRO</span>
               </span>
             </div>
-          </a>
+          </Link>
 
           {/* Quick status pill */}
           <div className="hidden lg:flex items-center gap-2 ml-3 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-600">
@@ -64,37 +65,34 @@ export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) 
 
         {/* Action Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Toggle button to switch to Dashboard view */}
-          {onSwitchToDashboard && (
-            <button
-              onClick={onSwitchToDashboard}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/90 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 text-xs font-mono transition-all font-semibold"
-              title="Open full Auditor App"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-indigo-600" />
-              {activeMode === 'dashboard' ? 'View Landing Page' : 'Launch Auditor App'}
-            </button>
-          )}
+          <Link
+            to="/app/report"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/90 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 text-xs font-mono transition-all font-semibold"
+            title="Open Full Audit Report & Optimization Roadmap"
+          >
+            <FileText className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Full Audit Report</span>
+          </Link>
 
-          <a
-            href="#demo"
+          <Link
+            to="/app/overview"
             className="group relative inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <span>Start Auditing Free</span>
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Launch Studio</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </a>
+          </Link>
         </div>
 
         {/* Mobile Hamburger Toggle */}
         <div className="flex md:hidden items-center gap-2">
-          {onSwitchToDashboard && (
-            <button
-              onClick={onSwitchToDashboard}
-              className="p-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-mono"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-            </button>
-          )}
+          <Link
+            to="/app/report"
+            className="p-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-mono"
+            title="Full Report"
+          >
+            <FileText className="w-4 h-4" />
+          </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-100"

@@ -25,6 +25,7 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
   const menuItems = [
     { path: '/app/overview', label: 'Overview & Vitals', icon: LayoutDashboard },
     { path: '/app/report', label: 'Full Audit Report', icon: FileText, badge: 'Full', badgeColor: 'indigo' },
+    { path: '/app/advisor', label: 'Score Improvement', icon: TrendingUp, badge: '+38 pts', badgeColor: 'emerald' },
     { path: '/app/diagnostics', label: 'Diagnostics & Fixes', icon: AlertCircle, badge: issuesCount > 0 ? issuesCount : null, badgeColor: issuesCount > 0 ? 'rose' : null },
     { path: '/app/setup', label: 'Install npm Tracker', icon: Terminal, badge: 'SDK', badgeColor: 'slate' },
     { path: '/app/vitals', label: 'Core Web Vitals', icon: Zap },

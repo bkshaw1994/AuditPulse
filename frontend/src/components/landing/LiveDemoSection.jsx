@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Play, 
   RefreshCw, 
@@ -195,16 +196,15 @@ export default function LiveDemoSection({ onOpenFullDashboard }) {
             </div>
 
             {/* Launch Full Workspace Button */}
-            {onOpenFullDashboard && (
-              <div className="pt-2 text-center">
-                <button
-                  onClick={onOpenFullDashboard}
-                  className="inline-flex items-center gap-2 text-xs font-mono text-indigo-600 hover:text-indigo-800 underline font-bold"
-                >
-                  Open Full Diagnostic Studio & Export CSV/JSON &rarr;
-                </button>
-              </div>
-            )}
+            <div className="pt-3 text-center">
+              <Link
+                to="/app/report"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition"
+              >
+                <span>View Full Audit Report & Score Improvement Roadmap</span>
+                <span className="text-indigo-200">&rarr;</span>
+              </Link>
+            </div>
 
           </div>
 

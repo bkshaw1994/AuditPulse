@@ -17,9 +17,10 @@ import WebVitalsCard from './WebVitalsCard';
 import SsrAuditCard from './SsrAuditCard';
 import MetaTagTable from './MetaTagTable';
 import SocialPreview from './SocialPreview';
+import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 
 export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide }) {
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'fixes' | 'vitals' | 'ssr' | 'seo' | 'social'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'advisor' | 'fixes' | 'vitals' | 'ssr' | 'seo' | 'social'
 
   if (!audit || !audit.scores) {
     return (
@@ -206,6 +207,7 @@ export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[
           { key: 'all', label: 'All Report Sections' },
+          { key: 'advisor', label: 'Score Improvement Roadmap', badge: '+38 pts' },
           { key: 'fixes', label: `Code Fix Center (${issues.length})`, badge: issues.length },
           { key: 'vitals', label: 'Core Web Vitals Matrix' },
           { key: 'ssr', label: 'SSR vs CSR Hydration' },
@@ -222,9 +224,23 @@ export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide
             }`}
           >
             <span>{tab.label}</span>
+            {tab.badge && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                activeTab === tab.key ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-700'
+              }`}>
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Section 0: Score Improvement Roadmap & Action Plan */}
+      {(activeTab === 'all' || activeTab === 'advisor') && (
+        <section className="space-y-3">
+          <ScoreImprovementAdvisor audit={audit} onOpenGuide={onOpenGuide} />
+        </section>
+      )}
 
       {/* Section 1: Detailed Code Fix Center (Always shown on 'all' or 'fixes') */}
       {(activeTab === 'all' || activeTab === 'fixes') && (
