@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   Zap,
@@ -11,43 +11,46 @@ import {
   ChevronUp,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
   FileCode,
   Gauge
 } from 'lucide-react';
 
-export default function ScoreImprovementAdvisor({ audit = {}, onOpenGuide }) {
-  const [copiedId, setCopiedId] = useState(null);
-  const [completedSteps, setCompletedSteps] = useState({});
-  const [expandedStep, setExpandedStep] = useState(0); // auto-expand first priority fix
+/**
+ * Dynamically generates score improvement recommendations tailored strictly
+ * to the provided audit URL, domain, metrics, and detected issues.
+ */
+function buildDynamicSuggestions(audit) {
+  if (!audit) return [];
 
-  if (!audit || !audit.scores) return null;
+  const url = audit.url || 'https://example.com';
+  const domain = audit.domain || url.replace(/^https?:\/\//i, '').split('/')[0] || 'target-site.com';
+  const perf = audit.performanceMetrics || {};
+  const seo = audit.seoMeta || {};
+  const ssr = audit.ssrMeta || {};
+  const issues = audit.issues || [];
 
-  const currentScore = audit.scores?.overall || 58;
-  const currentPerf = audit.scores?.performance || 48;
-  const currentSeo = audit.scores?.seo || 62;
+  const suggestions = [];
 
-  // Curated high-impact score improvement suggestions
-  const improvementSuggestions = [
-    {
+  // 1. Largest Contentful Paint (LCP) Booster
+  if (perf.lcp > 2500) {
+    const lcpSec = (perf.lcp / 1000).toFixed(2);
+    suggestions.push({
       id: 'lcp-preload',
-      title: 'Preload Hero LCP Asset & Enable High Fetch Priority',
+      title: `Preload Hero LCP Asset on ${domain} (${lcpSec}s)`,
       category: 'Core Web Vitals',
-      currentMetric: `${((audit.performanceMetrics?.lcp || 4420) / 1000).toFixed(2)}s LCP`,
+      currentMetric: `${lcpSec}s LCP`,
       targetMetric: '< 2.5s LCP',
-      scoreImpact: '+18 to +24 Points',
-      potentialGain: 22,
+      scoreImpact: '+18 to +25 Points',
+      potentialGain: 20,
       difficulty: 'Easy (5 mins)',
       targetFile: 'frontend/index.html (<head>)',
-      whyScoreSuffers:
-        'The Largest Contentful Paint image or critical font is requested late during client-side hydration, delaying render by over 3.2 seconds and triggering a severe Google CWV ranking penalty.',
+      whyScoreSuffers: `The Largest Contentful Paint on ${url} took ${lcpSec}s (Google target is <2.5s). Late-discovered hero images or blocking font resources delay main-thread rendering.`,
       howToImprove: [
-        '1. Add a <link rel="preload"> tag in the HTML <head> with fetchpriority="high".',
-        '2. Convert the image to modern WebP / AVIF format with optimized dimensions.',
-        '3. Ensure Cache-Control immutable headers are enabled on your CDN.'
+        `1. Add a high-priority preload tag in the HTML <head> for your primary above-the-fold hero asset.`,
+        `2. Preconnect to critical third-party CDN domains used on ${domain}.`,
+        `3. Convert images to modern WebP / AVIF with responsive srcset attributes.`
       ],
-      codeSnippet: `<!-- frontend/index.html (<head>) -->
-<!-- 1. Preload high-priority hero image before JS hydration -->
+      codeSnippet: `<!-- In <head> of ${domain} -->
 <link
   rel="preload"
   as="image"
@@ -55,122 +58,295 @@ export default function ScoreImprovementAdvisor({ audit = {}, onOpenGuide }) {
   type="image/webp"
   fetchpriority="high"
 />
-
-<!-- 2. Preconnect to critical asset CDN origins -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />`
-    },
-    {
-      id: 'ssr-prerender',
-      title: 'Pre-render Server HTML for Non-JS Crawlers & Instant FCP',
-      category: 'SSR & SEO',
-      currentMetric: 'Empty #root Container',
-      targetMetric: 'Full Static HTML Skeleton',
-      scoreImpact: '+14 to +18 Points',
-      potentialGain: 16,
-      difficulty: 'Medium (15 mins)',
-      targetFile: 'frontend/index.html & vite.config.js',
-      whyScoreSuffers:
-        'When Googlebot or social link bots request your URL, they receive an empty <div> container. If client-side JavaScript takes >5s to hydrate, the page is indexed as blank or penalized.',
-      howToImprove: [
-        '1. Pre-render essential meta tags (<title>, <meta description>, canonical) directly in index.html.',
-        '2. Insert a lightweight CSS skeleton placeholder inside #root so First Contentful Paint is under 0.8s.',
-        '3. Use Vite SSG (vite-plugin-ssr or static pre-rendering) for marketing and content routes.'
-      ],
-      codeSnippet: `<!-- frontend/index.html -->
-<head>
-  <title>PulseCart Storefront - Modern E-Commerce Performance</title>
-  <meta name="description" content="Shop verified high-performance apparel with instantaneous sub-second page transitions." />
-  <link rel="canonical" href="https://pulsecart-store.io" />
-</head>
-<body>
-  <div id="root">
-    <!-- Server-Side Pre-rendered Skeleton for 0.4s First Paint -->
-    <header class="skeleton-header"><nav>Loading PulseCart...</nav></header>
-  </div>
-</body>`
-    },
-    {
-      id: 'inp-memo',
-      title: 'Eliminate 520ms React Hydration Freeze with React.memo() & startTransition',
-      category: 'Interaction to Next Paint (INP)',
-      currentMetric: `${audit.performanceMetrics?.inp || 520}ms INP`,
-      targetMetric: '< 200ms INP',
-      scoreImpact: '+10 to +15 Points',
-      potentialGain: 12,
-      difficulty: 'Medium (10 mins)',
-      targetFile: 'frontend/src/components/ProductGrid.jsx',
-      whyScoreSuffers:
-        'Filtering or typing triggers a synchronous reconciliation cascade across 120 child components, blocking the browser main thread and failing Google INP thresholds.',
-      howToImprove: [
-        '1. Wrap pure leaf components in React.memo() with primitive prop comparisons.',
-        '2. Wrap non-urgent search filter state updates inside startTransition().',
-        '3. Virtualize lists with react-window if rendering more than 50 items at once.'
-      ],
-      codeSnippet: `import React, { memo, startTransition, useState } from 'react';
-
-// 1. Memoize child items to prevent unnecessary re-renders
-export const ProductCard = memo(function ProductCard({ product, onSelect }) {
-  return (
-    <div onClick={() => onSelect(product.id)} className="product-card">
-      <img src={product.image} alt={product.title} loading="lazy" />
-      <h4>{product.title}</h4>
-    </div>
-  );
-});
-
-// 2. Wrap heavy filter updates in startTransition to keep UI responsive
-function ProductCatalog({ items }) {
-  const [filter, setFilter] = useState('');
-
-  const handleSearch = (e) => {
-    const val = e.target.value;
-    startTransition(() => {
-      setFilter(val);
+<link rel="preconnect" href="${url}" />`
     });
-  };
+  }
 
-  return <input type="text" onChange={handleSearch} placeholder="Filter items..." />;
-}`
-    },
-    {
-      id: 'opengraph-social',
-      title: 'Inject Complete OpenGraph & Twitter Card Meta Tags',
-      category: 'Social Indexability',
-      currentMetric: 'Missing og:image & twitter:card',
-      targetMetric: 'Rich Social Previews Active',
+  // 2. Server Response Time / TTFB Booster
+  if (perf.ttfb > 600) {
+    suggestions.push({
+      id: 'ttfb-cache',
+      title: `Reduce Time to First Byte (${perf.ttfb}ms) on ${domain}`,
+      category: 'Server Latency',
+      currentMetric: `${perf.ttfb}ms TTFB`,
+      targetMetric: '< 400ms TTFB',
+      scoreImpact: '+12 to +18 Points',
+      potentialGain: 15,
+      difficulty: 'Medium (10 mins)',
+      targetFile: 'Edge CDN / Server HTTP Headers',
+      whyScoreSuffers: `Initial server response time on ${domain} is ${perf.ttfb}ms. Slower initial byte delivery delays subsequent HTML parsing and style evaluation.`,
+      howToImprove: [
+        `1. Enable Cache-Control headers with stale-while-revalidate on your server or CDN.`,
+        `2. Deploy static content to an Edge CDN (Cloudflare, Vercel Edge, AWS CloudFront).`,
+        `3. Enable Gzip or Brotli compression on HTTP responses.`
+      ],
+      codeSnippet: `// Server Cache-Control Header for ${domain}
+res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=600');`
+    });
+  }
+
+  // 3. SSR / Pre-rendering Hydration Gap Booster
+  if (!ssr.hasRawTitle || !ssr.hasRawDescription || audit.renderingType === 'CSR') {
+    suggestions.push({
+      id: 'ssr-prerender',
+      title: `Pre-render Initial Server HTML for ${domain}`,
+      category: 'SSR & Hydration',
+      currentMetric: 'Client-Only Hydration Gap',
+      targetMetric: 'Pre-rendered Static HTML',
+      scoreImpact: '+14 to +20 Points',
+      potentialGain: 18,
+      difficulty: 'Medium (15 mins)',
+      targetFile: 'frontend/index.html & Build Config',
+      whyScoreSuffers: `Initial HTTP HTML response from ${url} lacks pre-rendered content. Search engine crawlers (Googlebot, Bingbot) and social bots receive an empty document prior to JS execution.`,
+      howToImprove: [
+        `1. Pre-render the primary <title>, <meta description>, and canonical tag directly in index.html.`,
+        `2. Inject a lightweight CSS skeleton placeholder into the root container for sub-0.5s First Paint.`,
+        `3. Implement Static Site Generation (SSG) or Server-Side Rendering (SSR) for indexable routes.`
+      ],
+      codeSnippet: `<!-- Initial pre-rendered HTML for ${domain} -->
+<head>
+  <title>${seo.title ? seo.title : `${domain} - High Performance Web Application`}</title>
+  <meta name="description" content="${seo.description ? seo.description.slice(0, 155) : `Explore ${domain} with sub-second page performance.`}" />
+  <link rel="canonical" href="${url}" />
+</head>`
+    });
+  }
+
+  // 4. Page Title Tag Optimization
+  if (!seo.title) {
+    suggestions.push({
+      id: 'missing-title',
+      title: `Add Missing Page Title Tag on ${domain}`,
+      category: 'SEO & Indexability',
+      currentMetric: 'No <title> Tag Found',
+      targetMetric: '30 to 60 Chars Title',
+      scoreImpact: '+20 to +25 Points',
+      potentialGain: 22,
+      difficulty: 'Easy (2 mins)',
+      targetFile: 'frontend/index.html (<head>)',
+      whyScoreSuffers: `No <title> tag was found in the rendered DOM of ${url}. Title tags are the single most influential on-page SEO ranking signal.`,
+      howToImprove: [
+        `1. Add a descriptive <title> tag between 30 and 60 characters.`,
+        `2. Include primary brand name (${domain}) and target value proposition.`
+      ],
+      codeSnippet: `<title>${domain.charAt(0).toUpperCase() + domain.slice(1)} - Fast Modern Web Application</title>`
+    });
+  } else if (seo.titleLength < 30 || seo.titleLength > 60) {
+    const isShort = seo.titleLength < 30;
+    suggestions.push({
+      id: 'title-length',
+      title: `Optimize Page Title Length on ${domain} (${seo.titleLength} chars)`,
+      category: 'SEO & Search Snippet',
+      currentMetric: `"${seo.title}" (${seo.titleLength} chars)`,
+      targetMetric: '30 to 60 Chars',
       scoreImpact: '+8 to +12 Points',
       potentialGain: 10,
-      difficulty: 'Easy (5 mins)',
+      difficulty: 'Easy (2 mins)',
       targetFile: 'frontend/index.html (<head>)',
-      whyScoreSuffers:
-        'Slack, LinkedIn, Twitter, and iMessage generate blank grey snippet cards when links are shared, resulting in zero social click-throughs and lower domain authority score.',
+      whyScoreSuffers: isShort
+        ? `Page title on ${url} is only ${seo.titleLength} chars. Search engines prefer titles with 30-60 characters for complete search snippet context.`
+        : `Page title on ${url} is ${seo.titleLength} chars and will be truncated with an ellipsis in Google search results.`,
       howToImprove: [
-        '1. Define og:title, og:description, and absolute og:image URL (1200x630px).',
-        '2. Add twitter:card as summary_large_image.',
-        '3. Validate that og:image is served over HTTPS with permissive CORS headers.'
+        isShort
+          ? `Extend title to at least 30 characters by adding key category or brand terms.`
+          : `Trim title to under 60 characters to prevent truncation in search result snippets.`
       ],
-      codeSnippet: `<!-- frontend/index.html (<head>) -->
+      codeSnippet: isShort
+        ? `<title>${seo.title} — Official Platform & Features Guide</title>`
+        : `<title>${seo.title.slice(0, 55).trim()}</title>`
+    });
+  }
+
+  // 5. Meta Description Tag Optimization
+  if (!seo.description) {
+    suggestions.push({
+      id: 'missing-desc',
+      title: `Add Missing Meta Description on ${domain}`,
+      category: 'SEO & Click-Through',
+      currentMetric: 'No Description Tag',
+      targetMetric: '70 to 160 Chars',
+      scoreImpact: '+15 to +20 Points',
+      potentialGain: 16,
+      difficulty: 'Easy (3 mins)',
+      targetFile: 'frontend/index.html (<head>)',
+      whyScoreSuffers: `Search engines crawling ${url} will generate arbitrary page snippet text without a designated description tag.`,
+      howToImprove: [
+        `1. Add a meta description tag between 70 and 160 characters.`,
+        `2. Summarize key benefits and include a direct call to action.`
+      ],
+      codeSnippet: `<meta name="description" content="Discover ${domain}. High performance, reliable web application delivering fast page loads and seamless user experience." />`
+    });
+  } else if (seo.descriptionLength < 70 || seo.descriptionLength > 160) {
+    const isShort = seo.descriptionLength < 70;
+    suggestions.push({
+      id: 'desc-length',
+      title: `Refine Meta Description Length on ${domain} (${seo.descriptionLength} chars)`,
+      category: 'SEO & Search Snippet',
+      currentMetric: `${seo.descriptionLength} Chars`,
+      targetMetric: '70 to 160 Chars',
+      scoreImpact: '+8 to +12 Points',
+      potentialGain: 10,
+      difficulty: 'Easy (3 mins)',
+      targetFile: 'frontend/index.html (<head>)',
+      whyScoreSuffers: isShort
+        ? `Description on ${url} is only ${seo.descriptionLength} characters. Expand to 70-160 characters to optimize click-through rate.`
+        : `Description on ${url} is ${seo.descriptionLength} characters and exceeds Google's 160-character snippet display limit.`,
+      howToImprove: [
+        isShort
+          ? `Add additional details about ${domain} to reach at least 70 characters.`
+          : `Condense description to between 70 and 160 characters to avoid snippet truncation.`
+      ],
+      codeSnippet: isShort
+        ? `<meta name="description" content="${seo.description} Explore features, documentation, and high-performance capabilities." />`
+        : `<meta name="description" content="${seo.description.slice(0, 155).trim()}..." />`
+    });
+  }
+
+  // 6. Image Accessibility & Alt Attributes
+  if (seo.imagesMissingAlt && seo.imagesMissingAlt > 0) {
+    suggestions.push({
+      id: 'missing-alt',
+      title: `Add Descriptive Alt Text to ${seo.imagesMissingAlt} Image(s) on ${domain}`,
+      category: 'Accessibility & Image SEO',
+      currentMetric: `${seo.imagesMissingAlt} Unlabeled Images`,
+      targetMetric: '0 Missing Alt Tags',
+      scoreImpact: '+8 to +14 Points',
+      potentialGain: 12,
+      difficulty: 'Easy (5 mins)',
+      targetFile: 'Component <img> Tags',
+      whyScoreSuffers: `${seo.imagesMissingAlt} images on ${url} lack an alt attribute, failing WCAG accessibility standards and missing Google Image Search rankings.`,
+      howToImprove: [
+        `1. Add concise descriptive alt text to all informative <img> tags.`,
+        `2. For purely decorative icons, specify alt="" or aria-hidden="true".`
+      ],
+      codeSnippet: `<!-- Accessible image markup for ${domain} -->
+<img src="/banner.webp" alt="Descriptive overview graphic for ${domain}" />
+<img src="/decorative-icon.svg" alt="" aria-hidden="true" />`
+    });
+  }
+
+  // 7. OpenGraph & Social Media Sharing Cards
+  const hasOgTitle = seo.ogTags && seo.ogTags['og:title'];
+  const hasOgImage = seo.ogTags && seo.ogTags['og:image'];
+  if (!hasOgTitle || !hasOgImage) {
+    suggestions.push({
+      id: 'opengraph-social',
+      title: `Inject Complete OpenGraph & Twitter Tags for ${domain}`,
+      category: 'Social Indexability',
+      currentMetric: 'Incomplete Social Tags',
+      targetMetric: 'Rich Social Previews Active',
+      scoreImpact: '+10 to +15 Points',
+      potentialGain: 12,
+      difficulty: 'Easy (4 mins)',
+      targetFile: 'frontend/index.html (<head>)',
+      whyScoreSuffers: `When links to ${url} are shared on Twitter, Slack, LinkedIn, or iMessage, no rich preview image card will generate.`,
+      howToImprove: [
+        `1. Define og:title, og:description, and absolute og:image URL (1200x630px).`,
+        `2. Specify twitter:card as summary_large_image.`
+      ],
+      codeSnippet: `<!-- Social OpenGraph & Twitter tags for ${url} -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://pulsecart-store.io" />
-<meta property="og:title" content="PulseCart - High Performance React Storefront" />
-<meta property="og:description" content="Shop verified high-performance apparel with instantaneous page transitions." />
-<meta property="og:image" content="https://pulsecart-store.io/social-preview.png" />
+<meta property="og:url" content="${url}" />
+<meta property="og:title" content="${seo.title || domain}" />
+<meta property="og:description" content="${seo.description ? seo.description.slice(0, 150) : `Discover ${domain}`}" />
+<meta property="og:image" content="${url.replace(/\/$/, '')}/og-image.png" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="PulseCart - High Performance React Storefront" />
-<meta name="twitter:description" content="Shop verified high-performance apparel." />
-<meta name="twitter:image" content="https://pulsecart-store.io/social-preview.png" />`
-    }
-  ];
+<meta name="twitter:title" content="${seo.title || domain}" />
+<meta name="twitter:description" content="${seo.description ? seo.description.slice(0, 150) : `Discover ${domain}`}" />
+<meta name="twitter:image" content="${url.replace(/\/$/, '')}/og-image.png" />`
+    });
+  }
 
-  // Calculate simulated score based on checked steps
+  // 8. Canonical Link Tag
+  if (!seo.canonical) {
+    suggestions.push({
+      id: 'missing-canonical',
+      title: `Specify Primary Canonical URL for ${domain}`,
+      category: 'SEO Duplication Protection',
+      currentMetric: 'No Canonical Specified',
+      targetMetric: 'Self-Referencing Canonical Tag',
+      scoreImpact: '+8 to +12 Points',
+      potentialGain: 10,
+      difficulty: 'Easy (2 mins)',
+      targetFile: 'frontend/index.html (<head>)',
+      whyScoreSuffers: `No <link rel="canonical"> tag was found on ${url}. Canonical tags prevent duplicate content indexation when URLs have query strings or trailing slashes.`,
+      howToImprove: [
+        `1. Add a self-referencing canonical link tag inside the HTML <head>.`
+      ],
+      codeSnippet: `<link rel="canonical" href="${url}" />`
+    });
+  }
+
+  // 9. Heading <h1> Tag Check
+  if (!seo.headings?.h1 || seo.headings.h1.length === 0) {
+    suggestions.push({
+      id: 'missing-h1',
+      title: `Add Primary <h1> Heading to ${domain}`,
+      category: 'Document Hierarchy',
+      currentMetric: '0 <h1> Headings Found',
+      targetMetric: 'Exactly 1 Primary <h1>',
+      scoreImpact: '+10 to +15 Points',
+      potentialGain: 12,
+      difficulty: 'Easy (3 mins)',
+      targetFile: 'Page Template Component',
+      whyScoreSuffers: `No <h1> tag was found in the rendered DOM of ${url}. A clear single <h1> defines the primary topic of the document for search crawlers.`,
+      howToImprove: [
+        `1. Add one primary <h1> element containing the main title of the page.`
+      ],
+      codeSnippet: `<h1>${seo.title ? seo.title : domain}</h1>`
+    });
+  }
+
+  // Fallback: If site is already high scoring (>90) and has few issues
+  if (suggestions.length === 0) {
+    suggestions.push({
+      id: 'perf-maintenance',
+      title: `Maintain Optimal Grade A Performance on ${domain}`,
+      category: 'Best Practices',
+      currentMetric: `${audit.scores?.overall || 95}/100 Grade A`,
+      targetMetric: 'Keep > 90 Score',
+      scoreImpact: 'Max Health Preserved',
+      potentialGain: 5,
+      difficulty: 'Ongoing',
+      targetFile: 'CI/CD Performance Budgets',
+      whyScoreSuffers: `Your site at ${url} is currently scoring in the top tier! Continue monitoring Real User Metrics (RUM) to prevent regression during future releases.`,
+      howToImprove: [
+        `1. Install @auditpulse/tracker to monitor real-user CWV metrics continuously.`,
+        `2. Enforce bundle-size limits in your build pipeline.`
+      ],
+      codeSnippet: `// Run continuous RUM in your root layout:
+import { AuditPulseTracker } from '@auditpulse/tracker';
+
+<AuditPulseTracker apiKey="ap_live_your_key" />`
+    });
+  }
+
+  return suggestions;
+}
+
+export default function ScoreImprovementAdvisor({ audit = {}, onOpenGuide }) {
+  const [copiedId, setCopiedId] = useState(null);
+  const [completedSteps, setCompletedSteps] = useState({});
+  const [expandedStep, setExpandedStep] = useState(0);
+
+  if (!audit || !audit.scores) return null;
+
+  const url = audit.url || 'target-site.com';
+  const domain = audit.domain || url.replace(/^https?:\/\//i, '').split('/')[0];
+  const currentScore = audit.scores?.overall || 0;
+
+  // Dynamically compute suggestions strictly for THIS audit
+  const improvementSuggestions = useMemo(() => buildDynamicSuggestions(audit), [audit]);
+
+  const totalPossibleGain = improvementSuggestions.reduce((sum, s) => sum + s.potentialGain, 0);
+  const maxProjectedScore = Math.min(100, currentScore + totalPossibleGain);
+
   const totalGainFromCompleted = improvementSuggestions
     .filter((s) => completedSteps[s.id])
     .reduce((sum, s) => sum + s.potentialGain, 0);
 
-  const simulatedScore = Math.min(98, currentScore + totalGainFromCompleted);
-  const maxProjectedScore = 96;
+  const simulatedScore = Math.min(100, currentScore + totalGainFromCompleted);
 
   const toggleStep = (id) => {
     setCompletedSteps((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -185,9 +361,8 @@ function ProductCatalog({ items }) {
   return (
     <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
       
-      {/* Top Banner: Score Improvement Target */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg">
-        {/* Subtle decorative glow */}
+      {/* Top Banner: Score Improvement Target specifically for audited URL */}
+      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg">
         <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -195,15 +370,15 @@ function ProductCatalog({ items }) {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-mono font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Interactive Score Improvement Roadmap</span>
+              <span>Tailored Action Plan for {domain}</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
               How to Boost Your Score from{' '}
               <span className="text-rose-400 font-mono">{currentScore}</span> to{' '}
-              <span className="text-emerald-400 font-mono">{maxProjectedScore}+</span>
+              <span className="text-emerald-400 font-mono">{maxProjectedScore}</span>
             </h2>
             <p className="text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              We identified 4 high-leverage bottlenecks. Apply the recommendations below to eliminate Core Web Vitals penalties and achieve a grade A score.
+              Based on the live crawl of <span className="font-mono text-indigo-200 font-semibold">{url}</span>, we identified {improvementSuggestions.length} priority opportunities. Follow the step-by-step code fixes below to eliminate score penalties.
             </p>
           </div>
 
@@ -238,18 +413,16 @@ function ProductCatalog({ items }) {
           </div>
         </div>
 
-        {/* Quick Progression Bar */}
+        {/* Dynamic Milestones Bar */}
         <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="text-slate-300">Target Milestones:</span>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">
-              LCP &lt; 2.5s (+22 pts)
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-slate-300">Audited Target:</span>
+            <span className="font-mono text-indigo-300 font-bold bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-400/30 truncate max-w-xs">
+              {url}
             </span>
-            <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono font-bold border border-indigo-500/30">
-              SSR Pre-render (+16 pts)
-            </span>
-            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/30">
-              INP &lt; 200ms (+12 pts)
+            <span className="text-slate-400">•</span>
+            <span className="text-emerald-300 font-semibold">
+              Potential Recovery: +{maxProjectedScore - currentScore} points
             </span>
           </div>
 
@@ -267,15 +440,15 @@ function ProductCatalog({ items }) {
         <div>
           <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
             <Gauge className="w-5 h-5 text-indigo-600" />
-            <span>Prioritized Step-by-Step Score Boosters</span>
+            <span>Prioritized Recommendations for {domain}</span>
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Click any booster to reveal exact code fixes, target file paths, and test instructions. Check boxes to simulate your new score.
+            Click any recommendation below to view code fixes tailored to your domain. Check the box to simulate score improvements.
           </p>
         </div>
 
         <div className="text-xs font-mono text-slate-500">
-          Showing {improvementSuggestions.length} High-Impact Recommendations
+          {improvementSuggestions.length} Recommendations Found
         </div>
       </div>
 
@@ -299,7 +472,6 @@ function ProductCatalog({ items }) {
               {/* Header row */}
               <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                  {/* Interactive Checkbox */}
                   <button
                     type="button"
                     onClick={() => toggleStep(step.id)}
@@ -340,7 +512,7 @@ function ProductCatalog({ items }) {
                       <span className="text-slate-400">•</span>
                       <span>Difficulty: <strong className="text-slate-700">{step.difficulty}</strong></span>
                       <span className="text-slate-400">•</span>
-                      <span>Metric Delta: <strong className="text-rose-600">{step.currentMetric}</strong> &rarr; <strong className="text-emerald-600">{step.targetMetric}</strong></span>
+                      <span>Current: <strong className="text-rose-600">{step.currentMetric}</strong> &rarr; Target: <strong className="text-emerald-600">{step.targetMetric}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -364,20 +536,18 @@ function ProductCatalog({ items }) {
               {/* Expanded Details & Code */}
               {isExpanded && (
                 <div className="p-5 md:p-6 bg-slate-50 border-t border-slate-200 space-y-4 animate-in fade-in duration-150">
-                  {/* Why Score Suffers */}
                   <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
                     <span className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5 text-rose-600">
-                      <AlertTriangle className="w-4 h-4" /> Why Your Score Suffers:
+                      <AlertTriangle className="w-4 h-4" /> Why Score Suffers on {domain}:
                     </span>
                     <p className="text-xs text-slate-700 leading-relaxed font-sans">
                       {step.whyScoreSuffers}
                     </p>
                   </div>
 
-                  {/* Step-by-Step Instructions */}
                   <div className="space-y-1.5">
                     <span className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5 text-emerald-600">
-                      <CheckCircle2 className="w-4 h-4" /> Action Plan to Gain {step.scoreImpact}:
+                      <CheckCircle2 className="w-4 h-4" /> Step-by-Step Action Plan ({step.scoreImpact}):
                     </span>
                     <ul className="space-y-1 text-xs text-slate-700 pl-4 font-sans list-disc">
                       {step.howToImprove.map((item, i) => (
@@ -386,12 +556,11 @@ function ProductCatalog({ items }) {
                     </ul>
                   </div>
 
-                  {/* Copy-Paste Code Fix */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
                         <Code2 className="w-4 h-4 text-indigo-600" />
-                        Ready-to-Copy Production Code Fix:
+                        Tailored Production Code Fix for {domain}:
                       </span>
 
                       <button
@@ -418,18 +587,17 @@ function ProductCatalog({ items }) {
                     </div>
                   </div>
 
-                  {/* Verification Note */}
                   <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900">
                     <span className="flex items-center gap-1.5">
                       <Zap className="w-4 h-4 text-emerald-600" />
-                      <strong>Verification:</strong> Re-run audit after deployment to observe automated +{step.potentialGain} pt recovery.
+                      <strong>Verification:</strong> Re-audit {domain} after applying this fix to claim your +{step.potentialGain} pt recovery.
                     </span>
                     <button
                       type="button"
                       onClick={() => toggleStep(step.id)}
                       className="text-xs font-bold underline text-emerald-700 hover:text-emerald-900"
                     >
-                      {isDone ? 'Mark as Not Applied' : 'Mark as Applied (+ ' + step.potentialGain + ' pts)'}
+                      {isDone ? 'Mark as Pending' : `Simulate Apply (+${step.potentialGain} pts)`}
                     </button>
                   </div>
                 </div>

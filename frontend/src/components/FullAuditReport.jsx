@@ -25,7 +25,7 @@ export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide
   if (!audit || !audit.scores) {
     return (
       <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center text-slate-500">
-        No active audit record selected. Run a crawl or load the demo project.
+        No active audit record found. Please enter a valid website URL in the search bar above to generate a full report.
       </div>
     );
   }
@@ -34,7 +34,7 @@ export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide
 
   const criticalIssues = issues.filter((i) => i.severity === 'critical');
   const warningIssues = issues.filter((i) => i.severity === 'warning');
-  const passedCount = 12; // Standard passed checks
+  const passedCount = Math.max(0, 14 - (criticalIssues.length + warningIssues.length));
 
   const getGrade = (score) => {
     if (score >= 90) return { letter: 'A', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };

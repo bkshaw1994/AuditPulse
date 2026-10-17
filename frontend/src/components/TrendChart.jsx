@@ -10,36 +10,54 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { TrendingUp, Lock, Sparkles } from 'lucide-react';
-import { generate24HourTrendData } from '../data/demoProjectState';
+import { TrendingUp, Lock, Sparkles, Activity } from 'lucide-react';
 
 export default function TrendChart({ history = [], onUpgradeClick }) {
   const [metricMode, setMetricMode] = useState('vitals'); // 'vitals' | 'latency' | 'traffic'
   const [timeRange, setTimeRange] = useState('24h'); // '24h' | '7d' | '30d' | '90d'
 
-  // If live history is provided and has > 1 point, map it; otherwise use the rich 24-hour demo series
-  const rawData =
-    history && history.length > 2
-      ? [...history].reverse().map((item, idx) => {
-          const d = new Date(item.timestamp);
-          const timeLabel = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:00`;
-          const lcpSec = parseFloat(((item.performanceMetrics?.lcp || 1800) / 1000).toFixed(2));
-          const inpMs = item.performanceMetrics?.inp || Math.min(Math.round((item.performanceMetrics?.tti || 1200) * 0.12), 520);
-          return {
-            time: timeLabel,
-            lcpSec,
-            inpMs,
-            cls: item.performanceMetrics?.cls || 0.04,
-            ttfbMs: item.performanceMetrics?.ttfb || 180,
-            requests: item.performanceMetrics?.totalRequests ? item.performanceMetrics.totalRequests * 35 : 1200,
-            isSpike: idx === 14,
-            p75Lcp: parseFloat((lcpSec * 0.95).toFixed(2)),
-            p90Lcp: parseFloat((lcpSec * 1.15).toFixed(2))
-          };
-        })
-      : generate24HourTrendData();
+  // Map real historical audit data strictly from audited records
+  const rawData = (history || []).map((item) => {
+    const d = new Date(item.timestamp);
+    const timeLabel = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const lcpSec = parseFloat(((item.performanceMetrics?.lcp || 0) / 1000).toFixed(2));
+    const inpMs = item.performanceMetrics?.inp || Math.min(Math.round((item.performanceMetrics?.tti || 0) * 0.12), 500);
+    return {
+      time: timeLabel,
+      lcpSec,
+      inpMs,
+      cls: item.performanceMetrics?.cls || 0,
+      ttfbMs: item.performanceMetrics?.ttfb || 0,
+      requests: item.performanceMetrics?.totalRequests || 1,
+      overallScore: item.scores?.overall || 0,
+      p75Lcp: lcpSec,
+      p90Lcp: parseFloat((lcpSec * 1.1).toFixed(2))
+    };
+  }).reverse();
+
+  // If there's 1 point, duplicate it with baseline labels so AreaChart draws a smooth baseline
+  const chartData = rawData.length === 1
+    ? [
+        { ...rawData[0], time: `${rawData[0].time} (Baseline)` },
+        { ...rawData[0], time: `${rawData[0].time} (Current)` }
+      ]
+    : rawData;
+
+  const latestPoint = rawData[rawData.length - 1] || null;
 
   const isGatedRange = timeRange !== '24h';
+
+  if (!rawData || rawData.length === 0) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm mb-6 text-center space-y-3">
+        <TrendingUp className="w-10 h-10 text-slate-300 mx-auto" />
+        <h4 className="text-base font-bold text-slate-800">Historical Telemetry Benchmark</h4>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">
+          Audit telemetry will plot performance trends and Core Web Vitals as you analyze URLs or capture live telemetry.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 space-y-6 relative overflow-hidden">
@@ -151,7 +169,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
         <div className={`w-full h-80 transition-filter duration-300 ${isGatedRange ? 'blur-xs select-none opacity-40' : ''}`}>
           <ResponsiveContainer width="100%" height="100%">
             {metricMode === 'vitals' ? (
-              <AreaChart data={rawData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorLcp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
@@ -164,7 +182,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="time" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} unit="s" domain={[0, 6]} />
+                <YAxis stroke="#64748b" fontSize={11} unit="s" domain={[0, 'auto']} />
                 <Tooltip
                   contentStyle={{
                     background: '#ffffff',
@@ -208,7 +226,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
                 />
               </AreaChart>
             ) : metricMode === 'latency' ? (
-              <AreaChart data={rawData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorInp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#9333ea" stopOpacity={0.25} />
@@ -258,7 +276,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
                 />
               </AreaChart>
             ) : (
-              <AreaChart data={rawData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorReqs" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0284c7" stopOpacity={0.3} />
@@ -322,15 +340,19 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
         )}
       </div>
 
-      {/* Traffic Spike & Diagnostic Alert Annotation */}
+      {/* Dynamic Telemetry Status Annotation */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 gap-3">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          <span className="font-semibold text-slate-900">Spike Detected (14:00 - 15:00 GMT):</span>
-          <span>8,450 concurrent requests triggered a 4.42s LCP regression and 520ms INP bottleneck.</span>
+          <span className={`w-2 h-2 rounded-full ${latestPoint && latestPoint.lcpSec > 2.5 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+          <span className="font-semibold text-slate-900">Telemetry Status:</span>
+          <span>
+            {latestPoint
+              ? `${rawData.length} crawl(s) recorded. Latest LCP: ${latestPoint.lcpSec}s (${latestPoint.lcpSec <= 2.5 ? 'Good' : 'Needs Optimization'}) | INP: ${latestPoint.inpMs}ms | TTFB: ${latestPoint.ttfbMs}ms`
+              : 'Awaiting initial crawl telemetry.'}
+          </span>
         </div>
         <div className="font-mono text-[11px] text-slate-500 shrink-0">
-          Algorithm: p75 Exponential Moving Avg
+          Source: Real Audited URL
         </div>
       </div>
 

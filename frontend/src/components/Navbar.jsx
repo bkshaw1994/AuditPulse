@@ -21,21 +21,19 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
 
         {currentAudit ? (
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${currentAudit.isDemoMode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-xs text-slate-500 font-medium">
-              {currentAudit.isDemoMode ? 'Active Demo Project:' : 'Target URL:'}
+              Target URL:
             </span>
             <span className="font-mono text-xs font-bold text-slate-900 px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
               {currentAudit.url}
             </span>
-            {currentAudit.isDemoMode && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold">
-                SIMULATED DATA
-              </span>
-            )}
           </div>
         ) : (
-          <span className="text-xs text-slate-500 font-medium">AuditPulse Diagnostic Studio</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-slate-400" />
+            <span className="text-xs text-slate-500 font-medium">Ready — Enter URL above to audit</span>
+          </div>
         )}
       </div>
 
@@ -97,7 +95,7 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs font-mono">
           <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
           <span className={isConnected ? 'text-slate-900 font-semibold' : 'text-slate-500'}>
-            {isConnected ? 'API Online' : 'Demo Mode'}
+            {isConnected ? 'API Online' : 'Offline'}
           </span>
         </div>
       </div>

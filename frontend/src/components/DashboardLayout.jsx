@@ -20,14 +20,13 @@ import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
-import { DEMO_PROJECT_STATE } from '../data/demoProjectState';
-import { Sparkles, Terminal, ArrowRight } from 'lucide-react';
+import { Sparkles, Terminal, ArrowRight, Search, Activity, AlertCircle } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [sites, setSites] = useState([]);
-  const [selectedUrl, setSelectedUrl] = useState(DEMO_PROJECT_STATE.url);
-  const [currentAudit, setCurrentAudit] = useState(DEMO_PROJECT_STATE);
-  const [history, setHistory] = useState([DEMO_PROJECT_STATE]);
+  const [selectedUrl, setSelectedUrl] = useState('');
+  const [currentAudit, setCurrentAudit] = useState(null);
+  const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(true);
@@ -54,50 +53,40 @@ export default function DashboardLayout() {
       const data = await fetchHistory(url);
       if (data.history && data.history.length > 0) {
         setHistory(data.history);
-        setCurrentAudit(data.history[0]);
-      } else {
-        const fallback = createFallbackAuditForUrl(url);
-        setHistory([fallback]);
-        setCurrentAudit(fallback);
       }
     } catch (err) {
-      console.error('Error fetching history:', err);
-      const fallback = createFallbackAuditForUrl(url);
-      setHistory([fallback]);
-      setCurrentAudit(fallback);
+      console.warn('Error fetching history:', err);
     }
   };
 
-  const createFallbackAuditForUrl = (targetUrl) => {
-    let domain = targetUrl.replace(/^https?:\/\//, '').split('/')[0];
-    return {
-      ...DEMO_PROJECT_STATE,
-      _id: `audit_${Date.now()}`,
-      isDemoMode: false,
-      url: targetUrl,
-      domain: domain || 'target-app.com',
-      timestamp: new Date().toISOString()
-    };
-  };
-
   const handleTriggerAudit = async (urlToAudit) => {
+    if (!urlToAudit || !urlToAudit.trim()) {
+      setError('Please enter a website URL (e.g., https://your-site.com)');
+      return;
+    }
+
+    let formatted = urlToAudit.trim();
+    if (!/^https?:\/\//i.test(formatted)) {
+      formatted = 'https://' + formatted;
+    }
+
     setIsLoading(true);
     setError(null);
-
-    const optimisticRecord = createFallbackAuditForUrl(urlToAudit);
-    setCurrentAudit(optimisticRecord);
+    setSelectedUrl(formatted);
 
     try {
-      const result = await runAudit(urlToAudit);
-      const newRecord = result.data || optimisticRecord;
-      setSelectedUrl(newRecord.url);
-      setCurrentAudit({ ...newRecord, isDemoMode: false });
-      await loadHistoryForUrl(newRecord.url);
-      await loadSites();
+      const result = await runAudit(formatted);
+      if (result && result.data) {
+        setCurrentAudit(result.data);
+        setSelectedUrl(result.data.url);
+        setHistory((prev) => [result.data, ...prev.filter((h) => h._id !== result.data._id)]);
+        await loadSites();
+      } else {
+        throw new Error('Audit crawl failed: No report data returned.');
+      }
     } catch (err) {
-      console.warn('Audit crawl fallback invoked:', err);
-      setError(err.message || 'Crawl notice - displaying baseline report');
-      setCurrentAudit(optimisticRecord);
+      console.error('[DashboardLayout] Crawl error:', err);
+      setError(err.message || 'Audit crawl process failed. Verify the URL is publicly reachable.');
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +143,53 @@ export default function DashboardLayout() {
   const issuesCount = currentAudit?.issues?.length || 0;
   const schemaCount = currentAudit?.seoMeta?.structuredData?.length || 0;
 
+  const renderAuditView = (component) => {
+    if (isLoading) return null;
+    if (!currentAudit) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 md:p-14 text-center shadow-sm space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600">
+            <Search className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2 max-w-xl mx-auto">
+            <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Enter a URL to Generate Your Audit Report
+            </h3>
+            <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
+              Enter any public website URL above to run a live audit. AuditPulse will benchmark Core Web Vitals, diagnose SSR vs. CSR hydration gaps, and generate customized score improvement suggestions for your domain.
+            </p>
+          </div>
+
+          {/* Quick Test Samples */}
+          <div className="pt-2 max-w-md mx-auto">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider block mb-3">
+              Or Test Live on Sample Sites:
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {[
+                { name: 'React Docs', url: 'https://react.dev' },
+                { name: 'Next.js', url: 'https://nextjs.org' },
+                { name: 'Hacker News', url: 'https://news.ycombinator.com' }
+              ].map((sample) => (
+                <button
+                  key={sample.url}
+                  type="button"
+                  onClick={() => handleTriggerAudit(sample.url)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 hover:text-indigo-700 font-mono text-xs transition shadow-xs flex items-center gap-1.5"
+                >
+                  <span>{sample.name}</span>
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return component;
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
       {/* Left Fixed Sidebar */}
@@ -177,222 +213,208 @@ export default function DashboardLayout() {
           onOpenPricing={() => setIsPricingOpen(true)}
         />
 
-        {/* Demo Mode Notice Banner */}
-        {currentAudit?.isDemoMode && (
-          <div className="bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 p-[1px] shadow-xs">
-            <div className="bg-white/95 px-6 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-                <span className="font-bold text-slate-900">
-                  ⚡ Interactive Demo State:
-                </span>
-                <span className="text-slate-600">
-                  Loaded rich mock project ("PulseCart Storefront") with simulated traffic surge (8,450 req/min) and high LCP warning (4.42s).
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  to="/app/setup"
-                  className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200 transition flex items-center gap-1"
-                >
-                  <Terminal className="w-3 h-3" />
-                  <span>Connect Your App</span>
-                </Link>
-                <button
-                  onClick={() => setIsPricingOpen(true)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold transition flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>View Pro Features</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Main Content Area */}
         <main className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6">
           
           {/* Audit URL Input Form */}
-          <AuditForm onAuditTrigger={handleTriggerAudit} isLoading={isLoading} error={error} />
+          <AuditForm onAuditTrigger={handleTriggerAudit} isLoading={isLoading} error={error} initialUrl={selectedUrl} />
 
-          {/* Full Audit Report Views */}
-          {currentAudit && (
-            <div className="space-y-6">
-              <Routes>
-                {/* Redirect /app to /app/overview */}
-                <Route path="/" element={<Navigate to="/app/overview" replace />} />
-                
-                {/* Onboarding & Setup Page */}
-                <Route path="/setup" element={<SetupGuide />} />
+          {/* State 1: Audit In Progress */}
+          {isLoading && (
+            <div className="rounded-3xl border border-indigo-200 bg-white p-12 text-center shadow-lg space-y-5 animate-pulse">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center mx-auto text-indigo-600">
+                <Activity className="w-8 h-8 animate-spin" />
+              </div>
+              <div className="space-y-2 max-w-lg mx-auto">
+                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Auditing {selectedUrl}...
+                </h3>
+                <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
+                  Launching headless Chromium browser agent, benchmarking Core Web Vitals (LCP, INP, CLS), evaluating SSR hydration, and extracting live SEO metadata.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold">
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
+                <span>Inspecting dynamic DOM & Network waterfall...</span>
+              </div>
+            </div>
+          )}
 
-                {/* Gated Slack Alerts Page */}
-                <Route
-                  path="/alerts"
-                  element={<AlertSettingsCard onUpgradeClick={() => setIsPricingOpen(true)} />}
-                />
+          {/* Audit Views Routing */}
+          <div className="space-y-6">
+            <Routes>
+              {/* Redirect /app to /app/overview */}
+              <Route path="/" element={<Navigate to="/app/overview" replace />} />
+              
+              {/* Onboarding & Setup Page */}
+              <Route path="/setup" element={<SetupGuide />} />
 
-                {/* Route 1: Overview & Vitals */}
-                <Route
-                  path="/overview"
-                  element={
-                    <>
-                      <ExecutiveSummary audit={currentAudit} onOpenGuide={() => setIsGuideOpen(true)} />
-                      <ScoreCard
-                        scores={currentAudit.scores}
-                        issuesCount={issuesCount}
-                        timestamp={currentAudit.timestamp}
-                        domain={currentAudit.domain}
-                      />
-                      {/* Priority Score Improvement Action Plan */}
-                      <ScoreImprovementAdvisor
-                        audit={currentAudit}
-                        onOpenGuide={() => setIsGuideOpen(true)}
-                      />
-                      <SsrAuditCard
-                        renderingType={currentAudit.renderingType}
-                        ssrMeta={currentAudit.ssrMeta}
-                        seoMeta={currentAudit.seoMeta}
-                      />
-                      <WebVitalsCard metrics={currentAudit.performanceMetrics} />
-                      <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
-                      <IssuesList issues={currentAudit.issues} />
-                    </>
-                  }
-                />
+              {/* Gated Slack Alerts Page */}
+              <Route
+                path="/alerts"
+                element={<AlertSettingsCard onUpgradeClick={() => setIsPricingOpen(true)} />}
+              />
 
-                {/* Route: Dedicated Score Improvement Advisor */}
-                <Route
-                  path="/advisor"
-                  element={
+              {/* Route 1: Overview & Vitals */}
+              <Route
+                path="/overview"
+                element={renderAuditView(
+                  <>
+                    <ExecutiveSummary audit={currentAudit} onOpenGuide={() => setIsGuideOpen(true)} />
+                    <ScoreCard
+                      scores={currentAudit?.scores}
+                      issuesCount={issuesCount}
+                      timestamp={currentAudit?.timestamp}
+                      domain={currentAudit?.domain}
+                    />
+                    {/* Priority Score Improvement Action Plan */}
                     <ScoreImprovementAdvisor
                       audit={currentAudit}
                       onOpenGuide={() => setIsGuideOpen(true)}
                     />
-                  }
-                />
-
-                {/* Route 2: Core Web Vitals */}
-                <Route
-                  path="/vitals"
-                  element={
-                    <>
-                      <WebVitalsCard metrics={currentAudit.performanceMetrics} />
-                      <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
-                    </>
-                  }
-                />
-
-                {/* Route 3: SSR vs CSR Audit */}
-                <Route
-                  path="/ssr"
-                  element={
                     <SsrAuditCard
-                      renderingType={currentAudit.renderingType}
-                      ssrMeta={currentAudit.ssrMeta}
-                      seoMeta={currentAudit.seoMeta}
+                      renderingType={currentAudit?.renderingType}
+                      ssrMeta={currentAudit?.ssrMeta}
+                      seoMeta={currentAudit?.seoMeta}
                     />
-                  }
-                />
-
-                {/* Route 4: Dynamic Meta Tags */}
-                <Route
-                  path="/metatags"
-                  element={
-                    <MetaTagTable seoMeta={currentAudit.seoMeta} issues={currentAudit.issues} />
-                  }
-                />
-
-                {/* Route 5: Social Preview */}
-                <Route
-                  path="/social"
-                  element={
-                    <SocialPreview
-                      ogTags={currentAudit.seoMeta?.ogTags}
-                      twitterTags={currentAudit.seoMeta?.twitterTags}
-                      title={currentAudit.seoMeta?.title}
-                      description={currentAudit.seoMeta?.description}
-                      url={currentAudit.url}
-                    />
-                  }
-                />
-
-                {/* Route 6: Historical Analytics & 24h Trends */}
-                <Route
-                  path="/trends"
-                  element={
+                    <WebVitalsCard metrics={currentAudit?.performanceMetrics} />
                     <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
-                  }
-                />
+                    <IssuesList issues={currentAudit?.issues} />
+                  </>
+                )}
+              />
 
-                {/* Route 7: Audit Diff Tool */}
-                <Route
-                  path="/diff"
-                  element={
-                    <DiffViewer history={history} />
-                  }
-                />
+              {/* Route: Dedicated Score Improvement Advisor */}
+              <Route
+                path="/advisor"
+                element={renderAuditView(
+                  <ScoreImprovementAdvisor
+                    audit={currentAudit}
+                    onOpenGuide={() => setIsGuideOpen(true)}
+                  />
+                )}
+              />
 
-                {/* Route 8: JSON-LD Schema */}
-                <Route
-                  path="/schema"
-                  element={
-                    <StructuredDataViewer structuredData={currentAudit.seoMeta?.structuredData} />
-                  }
-                />
+              {/* Route 2: Core Web Vitals */}
+              <Route
+                path="/vitals"
+                element={renderAuditView(
+                  <>
+                    <WebVitalsCard metrics={currentAudit?.performanceMetrics} />
+                    <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
+                  </>
+                )}
+              />
 
-                {/* Route: Comprehensive Full Audit Report */}
-                <Route
-                  path="/report"
-                  element={
-                    <FullAuditReport
-                      audit={currentAudit}
-                      onOpenPricing={() => setIsPricingOpen(true)}
-                      onOpenGuide={() => setIsGuideOpen(true)}
-                    />
-                  }
-                />
+              {/* Route 3: SSR vs CSR Audit */}
+              <Route
+                path="/ssr"
+                element={renderAuditView(
+                  <SsrAuditCard
+                    renderingType={currentAudit?.renderingType}
+                    ssrMeta={currentAudit?.ssrMeta}
+                    seoMeta={currentAudit?.seoMeta}
+                  />
+                )}
+              />
 
-                {/* Route 9: Diagnostics & Fixes */}
-                <Route
-                  path="/diagnostics"
-                  element={
-                    <div className="space-y-6">
-                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs font-mono">
-                              ACTION CENTER
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              {currentAudit.issues?.length || 0} Issues Detected
-                            </span>
-                          </div>
-                          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                            Production Code Fix Center
-                          </h2>
-                          <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                            Root causes, target file paths, step-by-step instructions, and ready-to-copy code fixes to eliminate Core Web Vitals penalties.
-                          </p>
+              {/* Route 4: Dynamic Meta Tags */}
+              <Route
+                path="/metatags"
+                element={renderAuditView(
+                  <MetaTagTable seoMeta={currentAudit?.seoMeta} issues={currentAudit?.issues} />
+                )}
+              />
+
+              {/* Route 5: Social Preview */}
+              <Route
+                path="/social"
+                element={renderAuditView(
+                  <SocialPreview
+                    ogTags={currentAudit?.seoMeta?.ogTags}
+                    twitterTags={currentAudit?.seoMeta?.twitterTags}
+                    title={currentAudit?.seoMeta?.title}
+                    description={currentAudit?.seoMeta?.description}
+                    url={currentAudit?.url}
+                  />
+                )}
+              />
+
+              {/* Route 6: Historical Analytics & 24h Trends */}
+              <Route
+                path="/trends"
+                element={renderAuditView(
+                  <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
+                )}
+              />
+
+              {/* Route 7: Audit Diff Tool */}
+              <Route
+                path="/diff"
+                element={renderAuditView(
+                  <DiffViewer history={history} />
+                )}
+              />
+
+              {/* Route 8: JSON-LD Schema */}
+              <Route
+                path="/schema"
+                element={renderAuditView(
+                  <StructuredDataViewer structuredData={currentAudit?.seoMeta?.structuredData} />
+                )}
+              />
+
+              {/* Route: Comprehensive Full Audit Report */}
+              <Route
+                path="/report"
+                element={renderAuditView(
+                  <FullAuditReport
+                    audit={currentAudit}
+                    onOpenPricing={() => setIsPricingOpen(true)}
+                    onOpenGuide={() => setIsGuideOpen(true)}
+                  />
+                )}
+              />
+
+              {/* Route 9: Diagnostics & Fixes */}
+              <Route
+                path="/diagnostics"
+                element={renderAuditView(
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs font-mono">
+                            ACTION CENTER
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {currentAudit?.issues?.length || 0} Issues Detected
+                          </span>
                         </div>
-                        <Link
-                          to="/app/report"
-                          className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs shrink-0 flex items-center gap-1.5"
-                        >
-                          <span>Full Audit Report</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                          Production Code Fix Center
+                        </h2>
+                        <p className="text-xs text-slate-600 mt-1 max-w-xl">
+                          Root causes, target file paths, step-by-step instructions, and ready-to-copy code fixes to eliminate Core Web Vitals penalties.
+                        </p>
                       </div>
-                      <IssuesList issues={currentAudit.issues} />
+                      <Link
+                        to="/app/report"
+                        className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs shrink-0 flex items-center gap-1.5"
+                      >
+                        <span>Full Audit Report</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
-                  }
-                />
+                    <IssuesList issues={currentAudit?.issues} />
+                  </div>
+                )}
+              />
 
-                {/* Fallback redirect */}
-                <Route path="*" element={<Navigate to="/app/overview" replace />} />
-              </Routes>
-            </div>
-          )}
+              {/* Fallback redirect */}
+              <Route path="*" element={<Navigate to="/app/overview" replace />} />
+            </Routes>
+          </div>
         </main>
 
         <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 font-mono">

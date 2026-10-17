@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Loader2, Play, Sparkles, Cpu } from 'lucide-react';
 
-export default function AuditForm({ onAuditTrigger, isLoading, error }) {
-  const [url, setUrl] = useState('https://react.dev');
+export default function AuditForm({ onAuditTrigger, isLoading, error, initialUrl = '' }) {
+  const [url, setUrl] = useState(initialUrl);
   const [stepIndex, setStepIndex] = useState(0);
 
   const presets = [
