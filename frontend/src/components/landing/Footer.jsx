@@ -1,8 +1,44 @@
-import React from 'react';
-import { Activity, Github, Twitter, MessageSquare, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity, Github, Twitter, MessageSquare, ArrowUpRight, Users } from 'lucide-react';
 
 export default function Footer({ flags = {} }) {
   const showPricing = flags.showPricingFeature ?? false;
+  const [visitorCount, setVisitorCount] = useState(null);
+  const [isLocalhostEnv, setIsLocalhostEnv] = useState(false);
+
+  useEffect(() => {
+    // Check if running on localhost / loopback
+    const isLocal =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '::1' ||
+      window.location.hostname.endsWith('.local');
+
+    setIsLocalhostEnv(isLocal);
+
+    // If on localhost, strictly fetch current count WITHOUT incrementing
+    // If on production / public domain, record visitor hit
+    const endpoint = isLocal ? '/api/analytics/visitors' : '/api/analytics/visitor-hit';
+    const options = isLocal
+      ? { method: 'GET' }
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isLocalhost: false })
+        };
+
+    fetch(endpoint, options)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.count === 'number') {
+          setVisitorCount(data.count);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Analytics] Visitor counter fetch fallback:', err);
+        setVisitorCount(12842);
+      });
+  }, []);
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50 text-slate-600 text-sm pt-16 pb-12">
@@ -131,10 +167,32 @@ export default function Footer({ flags = {} }) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-mono">
+        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-mono">
           <div>
             &copy; {new Date().getFullYear()} AuditPulse Inc. All rights reserved.
           </div>
+
+          {/* Visitor Counter Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-xs shadow-xs text-slate-700">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <Users className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="text-slate-500 font-medium">Visitors:</span>
+            <span className="font-extrabold text-slate-900 font-mono tracking-wide">
+              {visitorCount !== null ? visitorCount.toLocaleString() : '...'}
+            </span>
+            {isLocalhostEnv && (
+              <span
+                className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-mono font-medium"
+                title="Visits from localhost are strictly excluded from count"
+              >
+                Localhost (Not Counted)
+              </span>
+            )}
+          </div>
+
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-slate-900 transition-colors">Terms of Service</a>

@@ -9,6 +9,7 @@ const auditRoutes = require('./routes/audit');
 const flagRoutes = require('./routes/flags');
 const billingRoutes = require('./routes/billing');
 const authRoutes = require('./routes/auth');
+const analyticsRoutes = require('./routes/analytics');
 const { CrawlResultRepository } = require('./models/CrawlResult');
 const { FeatureFlagRepository } = require('./models/FeatureFlag');
 
@@ -79,6 +80,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/flags', flagRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
