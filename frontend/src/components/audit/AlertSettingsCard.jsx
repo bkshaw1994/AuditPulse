@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bell, Lock, Sparkles, Send, Check } from 'lucide-react';
-import PageHeader from './PageHeader';
+import PageHeader from '../common/PageHeader';
 
 export default function AlertSettingsCard({ currentAudit, onUpgradeClick }) {
   const [slackUrl, setSlackUrl] = useState('');

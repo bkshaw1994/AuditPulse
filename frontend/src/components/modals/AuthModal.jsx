@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AuthModal() {
   const { authModal, closeAuthModal, login, register } = useAuth();

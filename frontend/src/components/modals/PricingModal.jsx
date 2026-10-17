@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Sparkles, Shield, Lock, ArrowRight, UserCheck, LogIn, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Day History' }) {
   const { user, isAuthenticated, requireAuth, upgradeUser } = useAuth();

@@ -5,13 +5,9 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { connectDB } = require('./config/db');
-const auditRoutes = require('./routes/audit');
-const flagRoutes = require('./routes/flags');
-const billingRoutes = require('./routes/billing');
-const authRoutes = require('./routes/auth');
-const analyticsRoutes = require('./routes/analytics');
-const { CrawlResultRepository } = require('./models/CrawlResult');
-const { FeatureFlagRepository } = require('./models/FeatureFlag');
+const { auditRoutes, flagRoutes, billingRoutes, authRoutes, analyticsRoutes } = require('./routes');
+const { CrawlResultRepository, FeatureFlagRepository } = require('./models');
+const { errorHandler, globalLimiter, auditCrawlLimiter } = require('./middleware');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
@@ -52,23 +48,7 @@ app.use(
 
 app.use(express.json({ limit: '2mb' }));
 
-// 4. Rate Limiting
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per 15m
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
-});
-
-const auditCrawlLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 25, // Limit each IP to 25 live audits per 15m
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Crawl rate limit exceeded. Maximum 25 audits per 15 minutes.' }
-});
-
+// 4. Rate Limiting Middleware
 app.use('/api/', globalLimiter);
 app.use('/api/audit/run', auditCrawlLimiter);
 
@@ -92,6 +72,9 @@ app.get('/api/health', (req, res) => {
     time: new Date()
   });
 });
+
+// 7. Global Error Handler Middleware
+app.use(errorHandler);
 
 // Initialize DB feature flags (strictly no fake/dummy audit data seeded)
 async function seedInitialDataIfEmpty() {

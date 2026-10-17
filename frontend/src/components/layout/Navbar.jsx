@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal, FileText, User, LogOut } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar({ currentAudit, isConnected, onExportJson, onPrintReport, onExportCsv, onOpenPricing, flags = {} }) {
   const { user, isAuthenticated, logout, openAuthModal, requireAuth } = useAuth();

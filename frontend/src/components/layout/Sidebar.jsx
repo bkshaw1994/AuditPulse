@@ -21,7 +21,7 @@ import {
   Lock,
   UserCheck
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide, onOpenPricing, flags = {} }) {
   const { user, isPro } = useAuth();

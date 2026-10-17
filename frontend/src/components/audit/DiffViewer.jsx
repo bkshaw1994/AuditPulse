@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GitCompare, ArrowRight, ArrowUpRight, ArrowDownRight, Check, AlertCircle, FileText } from 'lucide-react';
-import { fetchDiff } from '../services/api';
+import { fetchDiff } from '../../services/api';
 
 export default function DiffViewer({ history = [] }) {
   const [crawl1Id, setCrawl1Id] = useState('');

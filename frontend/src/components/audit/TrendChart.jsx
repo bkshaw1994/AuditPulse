@@ -11,7 +11,7 @@ import {
   ReferenceLine
 } from 'recharts';
 import { TrendingUp, Lock, Sparkles, Activity, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TrendChart({ history = [], onUpgradeClick }) {
   const { isPro, isAuthenticated, requireAuth } = useAuth();

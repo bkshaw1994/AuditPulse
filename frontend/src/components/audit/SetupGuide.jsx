@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Terminal, Copy, Check, ShieldCheck, Zap, Code2, ArrowRight, Play, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import PageHeader from './PageHeader';
+import PageHeader from '../common/PageHeader';
 
 export default function SetupGuide() {
   const [activeTab, setActiveTab] = useState('nextjs-app'); // 'nextjs-app' | 'nextjs-pages' | 'vite-react' | 'vanilla'

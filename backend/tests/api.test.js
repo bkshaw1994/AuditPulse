@@ -730,5 +730,47 @@ describe('AuditPulse Comprehensive Production Test Suite (90%+ Coverage)', () =>
       assert.ok(match);
       assert.ok(match.crawlCount >= 2);
     });
+
+    test('middleware components execute as expected', () => {
+      const { errorHandler, authenticateToken } = require('../middleware');
+      
+      // Test authenticateToken middleware
+      const tokensMap = new Map();
+      tokensMap.set('valid_tok', { name: 'Valid User' });
+      const authMw = authenticateToken(tokensMap);
+      
+      let statusCalled = null;
+      let jsonCalled = null;
+      const resMock = {
+        status: (s) => { statusCalled = s; return resMock; },
+        json: (j) => { jsonCalled = j; return resMock; }
+      };
+
+      // Reject missing header
+      authMw({ headers: {} }, resMock, () => {});
+      assert.strictEqual(statusCalled, 401);
+
+      // Reject expired token
+      authMw({ headers: { authorization: 'Bearer expired_tok' } }, resMock, () => {});
+      assert.strictEqual(statusCalled, 401);
+
+      // Accept valid token
+      let nextCalled = false;
+      const reqMock = { headers: { authorization: 'Bearer valid_tok' } };
+      authMw(reqMock, resMock, () => { nextCalled = true; });
+      assert.strictEqual(nextCalled, true);
+      assert.strictEqual(reqMock.user.name, 'Valid User');
+
+      // Test errorHandler middleware
+      let errStatus = null;
+      let errJson = null;
+      const resErrMock = {
+        status: (s) => { errStatus = s; return resErrMock; },
+        json: (j) => { errJson = j; return resErrMock; }
+      };
+      errorHandler(new Error('Sample error'), { method: 'GET', url: '/test' }, resErrMock, () => {});
+      assert.strictEqual(errStatus, 500);
+      assert.strictEqual(errJson.success, false);
+    });
   });
 });

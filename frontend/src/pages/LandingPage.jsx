@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './Navbar';
-import HeroSection from './HeroSection';
-import ProblemSection from './ProblemSection';
-import FeaturesSection from './FeaturesSection';
-import LiveDemoSection from './LiveDemoSection';
-import PricingSection from './PricingSection';
-import Footer from './Footer';
-import { fetchFeatureFlags } from '../../services/flagsApi';
+import Navbar from '../components/landing/Navbar';
+import HeroSection from '../components/landing/HeroSection';
+import ProblemSection from '../components/landing/ProblemSection';
+import FeaturesSection from '../components/landing/FeaturesSection';
+import LiveDemoSection from '../components/landing/LiveDemoSection';
+import PricingSection from '../components/landing/PricingSection';
+import Footer from '../components/landing/Footer';
+import { fetchFeatureFlags } from '../services/flagsApi';
 
 export default function LandingPage({ onSwitchToDashboard }) {
   const [flags, setFlags] = useState({

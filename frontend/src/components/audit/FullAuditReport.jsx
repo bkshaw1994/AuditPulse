@@ -18,7 +18,7 @@ import SsrAuditCard from './SsrAuditCard';
 import MetaTagTable from './MetaTagTable';
 import SocialPreview from './SocialPreview';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
-import PageHeader from './PageHeader';
+import PageHeader from '../common/PageHeader';
 
 export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide, flags = {} }) {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'advisor' | 'fixes' | 'vitals' | 'ssr' | 'seo' | 'social'
