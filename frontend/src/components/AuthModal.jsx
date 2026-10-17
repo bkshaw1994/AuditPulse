@@ -107,23 +107,6 @@ export default function AuthModal() {
     }
   };
 
-  const handleQuickDemoFill = (type = 'india') => {
-    if (type === 'india') {
-      setName('Rohit Sharma');
-      setEmail('rohit@techstartup.in');
-      setPassword('propass123');
-      setCompany('PulseTech Labs India');
-      setGstin('29AABCU9603R1ZM');
-    } else {
-      setName('Alex Developer');
-      setEmail('developer@auditpulse.io');
-      setPassword('password123');
-      setCompany('PulseCart Inc.');
-      setGstin('');
-    }
-    setError('');
-  };
-
   const isProIntent = intent === 'pro';
 
   return (
@@ -363,18 +346,6 @@ export default function AuthModal() {
               </div>
             </>
           )}
-
-          {/* Quick Demo Pre-Fill Action */}
-          <div className="pt-1 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400 font-medium">Testing quickly?</span>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoFill('india')}
-              className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
-            >
-              Fill Demo Indian Account ⚡
-            </button>
-          </div>
 
           {/* Submit Button */}
           <button
