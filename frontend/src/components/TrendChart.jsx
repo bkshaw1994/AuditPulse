@@ -327,7 +327,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
                 className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Upgrade to Pro — $29/mo</span>
+                <span>Upgrade to Pro — ₹1,999/mo</span>
               </button>
               <button
                 onClick={() => setTimeRange('24h')}

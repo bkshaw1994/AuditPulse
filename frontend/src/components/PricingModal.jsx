@@ -2,21 +2,59 @@ import React, { useState } from 'react';
 import { X, Check, Sparkles, Shield, Lock, ArrowRight } from 'lucide-react';
 
 export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Day History' }) {
+  const [currency, setCurrency] = useState('INR'); // 'INR' | 'USD'
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen) return null;
 
+  const pricingData = {
+    INR: {
+      symbol: '₹',
+      free: '0',
+      pro: {
+        monthly: '1,999',
+        annual: '1,599',
+        billedAnnualNote: 'billed annually at ₹19,188/yr'
+      },
+      enterprise: {
+        monthly: '7,999',
+        annual: '6,399',
+        billedAnnualNote: 'billed annually at ₹76,788/yr'
+      },
+      taxNote: 'Prices in INR (₹). +18% GST invoice with input tax credit (ITC) for registered businesses in India.',
+      paymentMethods: 'UPI (GPay / PhonePe / Paytm), RuPay & Cards, NetBanking, Razorpay'
+    },
+    USD: {
+      symbol: '$',
+      free: '0',
+      pro: {
+        monthly: '29',
+        annual: '24',
+        billedAnnualNote: 'billed annually at $288/yr'
+      },
+      enterprise: {
+        monthly: '99',
+        annual: '89',
+        billedAnnualNote: 'billed annually at $1,068/yr'
+      },
+      taxNote: 'Prices in USD ($). Global VAT and Sales Tax calculated at checkout.',
+      paymentMethods: 'Credit / Debit Cards, Apple Pay, Google Pay, PayPal via Lemon Squeezy'
+    }
+  };
+
+  const activePricing = pricingData[currency];
+
   const handleCheckout = async (planKey) => {
     setIsProcessing(true);
     try {
-      // In production, triggers Lemon Squeezy / Paddle checkout overlay
       const response = await fetch('/api/billing/checkout-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan: planKey,
           billingCycle,
+          currency,
           domain: window.location.hostname
         })
       });
@@ -24,10 +62,10 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
       if (data.checkoutUrl) {
         window.open(data.checkoutUrl, '_blank');
       } else {
-        alert('Lemon Squeezy checkout initiated. In production, this opens the merchant checkout overlay.');
+        alert(`Checkout initiated for ${planKey.toUpperCase()} plan (${activePricing.symbol}${activePricing.pro.monthly}/mo) with Indian payment options (UPI, NetBanking, Cards).`);
       }
     } catch (err) {
-      alert('Mock checkout initiated for Pro Developer plan ($29/mo).');
+      alert(`Checkout initiated for Pro Developer plan (${activePricing.symbol}${activePricing.pro.monthly}/mo).`);
     } finally {
       setIsProcessing(false);
     }
@@ -60,24 +98,49 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
             You requested access to <strong>{selectedFeature}</strong>. Get 90-day retention, real-time Slack regression alerts, and unlimited sites.
           </p>
 
-          {/* Billing Cycle Toggle */}
-          <div className="pt-2 flex items-center justify-center gap-2">
+          {/* Currency & Billing Cycle Controls */}
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+            {/* Currency Selector */}
             <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-semibold">
               <button
+                type="button"
+                onClick={() => setCurrency('INR')}
+                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                  currency === 'INR' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🇮🇳 India (₹ INR)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency('USD')}
+                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                  currency === 'USD' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🌐 Global ($ USD)</span>
+              </button>
+            </div>
+
+            {/* Billing Cycle Toggle */}
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-semibold">
+              <button
+                type="button"
                 onClick={() => setBillingCycle('monthly')}
                 className={`px-3 py-1.5 rounded-lg transition ${
                   billingCycle === 'monthly' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
                 }`}
               >
-                Monthly Billing
+                Monthly
               </button>
               <button
+                type="button"
                 onClick={() => setBillingCycle('annual')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1 transition ${
                   billingCycle === 'annual' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500'
                 }`}
               >
-                <span>Annual Billing</span>
+                <span>Annual</span>
                 <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                   Save 20%
                 </span>
@@ -94,7 +157,9 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
               <div className="text-sm font-bold text-slate-900">Community Free</div>
               <p className="text-xs text-slate-500 mt-1">For testing and personal hobby projects.</p>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-slate-900">$0</span>
+                <span className="text-3xl font-extrabold text-slate-900">
+                  {activePricing.symbol}{activePricing.free}
+                </span>
                 <span className="text-xs text-slate-500"> / forever</span>
               </div>
 
@@ -137,13 +202,27 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
             </div>
 
             <div>
-              <div className="text-sm font-bold text-slate-900">Pro Developer</div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-bold text-slate-900">Pro Developer</div>
+                {currency === 'INR' && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                    UPI / RuPay
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 mt-1">For startups and production React engineering teams.</p>
+              
               <div className="mt-4">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  {billingCycle === 'monthly' ? '$29' : '$24'}
+                  {activePricing.symbol}
+                  {billingCycle === 'monthly' ? activePricing.pro.monthly : activePricing.pro.annual}
                 </span>
                 <span className="text-xs text-slate-500"> / month</span>
+                {billingCycle === 'annual' && (
+                  <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                    {activePricing.pro.billedAnnualNote}
+                  </div>
+                )}
               </div>
 
               <ul className="mt-5 space-y-2.5 text-xs text-slate-700">
@@ -176,7 +255,11 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
               className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isProcessing ? 'Connecting...' : 'Upgrade with Lemon Squeezy'}</span>
+              <span>
+                {isProcessing
+                  ? 'Connecting...'
+                  : `Upgrade to Pro (${activePricing.symbol}${billingCycle === 'monthly' ? activePricing.pro.monthly : activePricing.pro.annual}/mo)`}
+              </span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -188,9 +271,15 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
               <p className="text-xs text-slate-500 mt-1">For high-traffic platforms & enterprise governance.</p>
               <div className="mt-4">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  {billingCycle === 'monthly' ? '$99' : '$89'}
+                  {activePricing.symbol}
+                  {billingCycle === 'monthly' ? activePricing.enterprise.monthly : activePricing.enterprise.annual}
                 </span>
                 <span className="text-xs text-slate-500"> / month</span>
+                {billingCycle === 'annual' && (
+                  <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                    {activePricing.enterprise.billedAnnualNote}
+                  </div>
+                )}
               </div>
 
               <ul className="mt-5 space-y-2.5 text-xs text-slate-600">
@@ -222,13 +311,15 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
           </div>
         </div>
 
-        {/* Global Tax & Compliance Footer */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-          <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Payments securely handled by <strong>Lemon Squeezy / Paddle</strong> (Merchant of Record). Global VAT/GST & tax compliance automated.</span>
+        {/* Global Tax & Indian Compliance Footer */}
+        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>
+              {activePricing.taxNote} Accepted: <strong>{activePricing.paymentMethods}</strong>.
+            </span>
           </div>
-          <span>Cancel anytime with 1-click self-serve customer portal.</span>
+          <span className="shrink-0 text-slate-400">Cancel anytime with 1-click self-serve portal.</span>
         </div>
       </div>
     </div>

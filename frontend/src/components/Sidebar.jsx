@@ -127,7 +127,7 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
               <Sparkles className="w-3 h-3 text-indigo-600" /> AuditPulse Pro
             </span>
             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">
-              $29/mo
+              ₹1,999/mo
             </span>
           </div>
           <p className="text-[10px] text-slate-500 leading-tight">

@@ -44,21 +44,24 @@ router.get('/subscription/:domain', (req, res) => {
  */
 router.post('/checkout-url', (req, res) => {
   try {
-    const { domain, plan = 'pro_monthly', email } = req.body;
+    const { domain, plan = 'pro_monthly', email, currency = 'INR' } = req.body;
     const storeId = process.env.LEMON_SQUEEZY_STORE_ID || 'auditpulse_store';
-    const variantId = process.env.LEMON_SQUEEZY_PRO_VARIANT_ID || 'variant_pro_monthly_29';
+    const variantId = process.env.LEMON_SQUEEZY_PRO_VARIANT_ID || 'variant_pro_monthly_inr';
 
-    // Mock Lemon Squeezy / Paddle Checkout URL for development & production redirect
+    // Mock Razorpay / Lemon Squeezy / Paddle Checkout URL
     const checkoutUrl = `https://${storeId}.lemonsqueezy.com/buy/${variantId}?checkout[email]=${encodeURIComponent(
       email || 'user@company.com'
-    )}&checkout[custom][domain]=${encodeURIComponent(domain || 'app')}`;
+    )}&checkout[custom][domain]=${encodeURIComponent(domain || 'app')}&checkout[custom][currency]=${currency}`;
+
+    const price = currency === 'USD' ? '$29/mo' : '₹1,999/mo';
 
     return res.json({
       success: true,
-      provider: 'lemon_squeezy',
+      provider: currency === 'INR' ? 'razorpay' : 'lemon_squeezy',
       checkoutUrl,
       plan,
-      price: '$29/mo'
+      currency,
+      price
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
