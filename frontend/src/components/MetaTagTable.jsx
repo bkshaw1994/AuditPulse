@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckCircle2, AlertTriangle, XCircle, Copy, Check, Heading, Image as ImageIcon, Globe, FileText } from 'lucide-react';
+import { Tag, CheckCircle2, AlertTriangle, XCircle, Copy, Check } from 'lucide-react';
 
 export default function MetaTagTable({ seoMeta = {}, issues = [] }) {
   const [copiedKey, setCopiedKey] = useState(null);

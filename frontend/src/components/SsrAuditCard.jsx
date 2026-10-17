@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server, Monitor, CheckCircle2, AlertTriangle, ShieldAlert, Cpu, Sparkles, FileCode } from 'lucide-react';
+import { Server, Monitor, CheckCircle2, AlertTriangle, ShieldAlert, FileCode } from 'lucide-react';
 
 export default function SsrAuditCard({ renderingType = 'CSR', ssrMeta = {}, seoMeta = {} }) {
   const isSsr = renderingType === 'SSR/SSG' || renderingType === 'HYBRID';

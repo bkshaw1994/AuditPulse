@@ -1,5 +1,4 @@
-import React from 'react';
-import { Code, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Code } from 'lucide-react';
 
 export default function StructuredDataViewer({ structuredData = [] }) {
   return (

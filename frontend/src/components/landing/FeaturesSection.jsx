@@ -226,10 +226,10 @@ export default function FeaturesSection({ flags = {} }) {
                 {activeCodeTab === 'provider' && showReactProvider ? (
                   <pre className="text-slate-300 leading-relaxed">
                     <code>
-                      <span className="text-purple-400">import</span> {'{'} AuditPulseProvider {'}'} <span className="text-purple-400">from</span> <span className="text-emerald-300">'@auditpulse/react'</span>;{'\n\n'}
+                      <span className="text-purple-400">import</span> {'{'} AuditPulseTracker {'}'} <span className="text-purple-400">from</span> <span className="text-emerald-300">'@auditpulse/tracker'</span>;{'\n\n'}
                       <span className="text-purple-400">export default function</span> <span className="text-yellow-300">App</span>() {'{'}{'\n'}
                       {'  '}<span className="text-purple-400">return</span> ({'\n'}
-                      {'    '}&lt;<span className="text-cyan-300">AuditPulseProvider</span>{'\n'}
+                      {'    '}&lt;<span className="text-cyan-300">AuditPulseTracker</span>{'\n'}
                       {'      '}apiKey=<span className="text-emerald-300">"ap_live_984723847"</span>{'\n'}
                       {'      '}trackComponentRenders=<span className="text-purple-400">{'{true}'}</span>{'\n'}
                       {'      '}sampleRate=<span className="text-purple-400">{'{1.0}'}</span>{'\n'}

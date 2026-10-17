@@ -11,8 +11,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Zap,
-  ArrowUpRight
+  Zap
 } from 'lucide-react';
 
 export default function WebVitalsCard({ metrics = {} }) {

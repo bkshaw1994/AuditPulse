@@ -32,5 +32,7 @@ export interface AuditPulseTrackerProps {
 }
 
 export const AuditPulseTracker: React.FC<AuditPulseTrackerProps>;
+export const AuditPulseProvider: React.FC<AuditPulseTrackerProps>;
+export default AuditPulseTracker;
 
 export function useAuditPulse(): { apiKey: string; trackComponentRenders: boolean };

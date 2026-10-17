@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Sparkles, Shield, Zap, Lock, BellRing, Database, ArrowRight } from 'lucide-react';
+import { X, Check, Sparkles, Shield, Lock, ArrowRight } from 'lucide-react';
 
 export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Day History' }) {
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'

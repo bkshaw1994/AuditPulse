@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Lock, Sparkles, Send, Check, ShieldAlert, Sliders } from 'lucide-react';
+import { Bell, Lock, Sparkles, Send, Check } from 'lucide-react';
 
 export default function AlertSettingsCard({ onUpgradeClick }) {
   const [slackUrl, setSlackUrl] = useState('');

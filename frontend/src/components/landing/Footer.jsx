@@ -3,7 +3,6 @@ import { Activity, Github, Twitter, MessageSquare, ArrowUpRight } from 'lucide-r
 
 export default function Footer({ flags = {} }) {
   const showPricing = flags.showPricingFeature ?? false;
-  const showCli = flags.showCliFeature ?? false;
 
   return (
     <footer className="border-t border-slate-200 bg-slate-50 text-slate-600 text-sm pt-16 pb-12">

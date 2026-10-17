@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import {
   FileText,
-  ShieldCheck,
-  ShieldAlert,
   Gauge,
-  Clock,
-  Layers,
-  Cpu,
   Server,
   Share2,
   Tag,
@@ -14,10 +9,8 @@ import {
   AlertTriangle,
   XCircle,
   Download,
-  FileSpreadsheet,
   Printer,
-  Sparkles,
-  ArrowRight
+  Sparkles
 } from 'lucide-react';
 import IssuesList from './IssuesList';
 import WebVitalsCard from './WebVitalsCard';

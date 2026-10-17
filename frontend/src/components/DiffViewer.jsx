@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitCompare, ArrowRight, ArrowUpRight, ArrowDownRight, Check, AlertCircle, Clock, FileText } from 'lucide-react';
+import { GitCompare, ArrowRight, ArrowUpRight, ArrowDownRight, Check, AlertCircle } from 'lucide-react';
 import { fetchDiff } from '../services/api';
 
 export default function DiffViewer({ history = [] }) {

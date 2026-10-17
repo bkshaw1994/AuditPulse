@@ -11,11 +11,7 @@ import {
   Check,
   Lightbulb,
   FileCode,
-  Zap,
-  ArrowRight,
-  Sparkles,
-  ExternalLink,
-  Layers
+  Zap
 } from 'lucide-react';
 
 export default function IssuesList({ issues = [] }) {

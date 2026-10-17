@@ -15,7 +15,6 @@ export default function LandingPage({ onSwitchToDashboard }) {
     showLiveDemo: true,
     showFeaturesGrid: true
   });
-  const [isLoadingFlags, setIsLoadingFlags] = useState(true);
 
   useEffect(() => {
     loadFlags();
@@ -27,8 +26,6 @@ export default function LandingPage({ onSwitchToDashboard }) {
       setFlags(data);
     } catch (err) {
       console.warn('[LandingPage] Could not load DB flags, using defaults:', err);
-    } finally {
-      setIsLoadingFlags(false);
     }
   };
 

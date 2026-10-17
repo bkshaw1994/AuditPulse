@@ -1,5 +1,4 @@
-import React from 'react';
-import { ShieldCheck, Zap, Share2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Zap, Share2 } from 'lucide-react';
 
 export default function ScoreCard({ scores = {}, issuesCount = 0 }) {
   const overall = scores.overall || 0;

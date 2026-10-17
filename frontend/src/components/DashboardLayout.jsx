@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import AuditForm from './AuditForm';
@@ -20,7 +20,7 @@ import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
 import { DEMO_PROJECT_STATE } from '../data/demoProjectState';
-import { Sparkles, Terminal, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Sparkles, Terminal, ArrowRight } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [sites, setSites] = useState([]);
@@ -32,8 +32,6 @@ export default function DashboardLayout() {
   const [isConnected, setIsConnected] = useState(true);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
-
-  const location = useLocation();
 
   useEffect(() => {
     loadSites();

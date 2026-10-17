@@ -229,3 +229,7 @@ export function useAuditPulse() {
   }
   return ctx;
 }
+
+// Backwards-compatible alias for <AuditPulseTracker />
+export const AuditPulseProvider = AuditPulseTracker;
+export default AuditPulseTracker;

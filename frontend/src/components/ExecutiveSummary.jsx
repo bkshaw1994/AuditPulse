@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, CheckCircle2, FileSpreadsheet, Copy, Check, HelpCircle, Sparkles, ArrowRight, FileText, Code2 } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, FileSpreadsheet, Copy, Check, HelpCircle, Sparkles, ArrowRight, FileText } from 'lucide-react';
 
 export default function ExecutiveSummary({ audit = {}, onOpenGuide }) {
   const [copiedSummary, setCopiedSummary] = useState(false);

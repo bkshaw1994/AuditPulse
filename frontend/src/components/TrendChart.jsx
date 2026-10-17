@@ -10,7 +10,7 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { TrendingUp, Clock, AlertTriangle, Lock, Sparkles, Zap } from 'lucide-react';
+import { TrendingUp, Lock, Sparkles } from 'lucide-react';
 import { generate24HourTrendData } from '../data/demoProjectState';
 
 export default function TrendChart({ history = [], onUpgradeClick }) {

@@ -26,18 +26,3 @@ export async function fetchFeatureFlags() {
   }
 }
 
-export async function updateFeatureFlag(key, enabled) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/flags`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, enabled })
-    });
-    if (!response.ok) throw new Error('Failed to update flag');
-    const data = await response.json();
-    return data.flags;
-  } catch (err) {
-    console.error('[flagsApi] Error updating flag:', err);
-    throw err;
-  }
-}
