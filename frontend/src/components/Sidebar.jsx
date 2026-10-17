@@ -23,8 +23,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide, onOpenPricing }) {
+export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide, onOpenPricing, flags = {} }) {
   const { user, isPro } = useAuth();
+  const showMonetization = flags.monetizationEnabled || flags.showPricingFeature;
   const menuItems = [
     { path: '/app/overview', label: 'Overview & Vitals', icon: LayoutDashboard },
     { path: '/app/report', label: 'Full Audit Report', icon: FileText, badge: issuesCount > 0 ? 'Report' : null, badgeColor: 'indigo' },
@@ -122,30 +123,32 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
         })}
       </div>
 
-      {/* Upgrade to Pro Card (Compact & Pinned to Bottom) */}
-      <div className="p-2.5 border-t border-slate-100 shrink-0">
-        <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-cyan-50 border border-indigo-100 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-indigo-600" /> AuditPulse Pro
-            </span>
-            <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
-              isPro ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'
-            }`}>
-              {isPro ? 'PRO ACTIVE' : '₹1,999/mo'}
-            </span>
+      {/* Upgrade to Pro Card (Controlled by DB feature flag) */}
+      {showMonetization && (
+        <div className="p-2.5 border-t border-slate-100 shrink-0">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-cyan-50 border border-indigo-100 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-indigo-600" /> AuditPulse Pro
+              </span>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                isPro ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'
+              }`}>
+                {isPro ? 'PRO ACTIVE' : '₹1,999/mo'}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              {isPro ? 'All Pro telemetry features unlocked.' : 'Unlock 90-day retention & Slack alerts.'}
+            </p>
+            <button
+              onClick={onOpenPricing}
+              className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] transition shadow-xs cursor-pointer"
+            >
+              {isPro ? 'Manage Subscription' : 'Upgrade Plan'}
+            </button>
           </div>
-          <p className="text-[10px] text-slate-500 leading-tight">
-            {isPro ? 'All Pro telemetry features unlocked.' : 'Unlock 90-day retention & Slack alerts.'}
-          </p>
-          <button
-            onClick={onOpenPricing}
-            className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] transition shadow-xs cursor-pointer"
-          >
-            {isPro ? 'Manage Subscription' : 'Upgrade Plan'}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Bottom Footer Navigation Links (Landing Page & CWV Guide) */}
       <div className="px-3 py-2 border-t border-slate-200 shrink-0 flex items-center justify-between text-xs font-mono text-slate-600">

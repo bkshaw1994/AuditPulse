@@ -77,7 +77,7 @@ export default function HeroSection({ onLaunchDemo, flags = {} }) {
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-800 font-medium text-base shadow-sm transition-all flex items-center justify-center gap-2 group"
             >
               <Play className="w-4 h-4 text-indigo-600 fill-indigo-100 group-hover:scale-110 transition-transform" />
-              <span>Launch Studio Demo</span>
+              <span>Launch Studio Workspace</span>
             </Link>
           </div>
 

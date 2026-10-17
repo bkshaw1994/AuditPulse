@@ -4,7 +4,6 @@ import { Activity, Github, Twitter, MessageSquare, ArrowUpRight, Users } from 'l
 export default function Footer({ flags = {} }) {
   const showPricing = flags.showPricingFeature ?? false;
   const [visitorCount, setVisitorCount] = useState(null);
-  const [isLocalhostEnv, setIsLocalhostEnv] = useState(false);
 
   useEffect(() => {
     // Check if running on localhost / loopback
@@ -13,8 +12,6 @@ export default function Footer({ flags = {} }) {
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname === '::1' ||
       window.location.hostname.endsWith('.local');
-
-    setIsLocalhostEnv(isLocal);
 
     // If on localhost, strictly fetch current count WITHOUT incrementing
     // If on production / public domain, record visitor hit
@@ -183,14 +180,6 @@ export default function Footer({ flags = {} }) {
             <span className="font-extrabold text-slate-900 font-mono tracking-wide">
               {visitorCount !== null ? visitorCount.toLocaleString() : '...'}
             </span>
-            {isLocalhostEnv && (
-              <span
-                className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-mono font-medium"
-                title="Visits from localhost are strictly excluded from count"
-              >
-                Localhost (Not Counted)
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-4">

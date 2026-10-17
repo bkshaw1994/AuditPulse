@@ -22,40 +22,50 @@ const FeatureFlagSchema = new mongoose.Schema(
 
 const FeatureFlag = mongoose.model('FeatureFlag', FeatureFlagSchema);
 
+const fallbackFlags = new Map([
+  ['showCliFeature', false],
+  ['showPricingFeature', false],
+  ['showReactProviderFeature', false],
+  ['showLiveDemo', true],
+  ['showFeaturesGrid', true],
+  ['monetizationEnabled', false]
+]);
+
 // Helper repository for feature flags
 class FeatureFlagRepository {
   static async getFlagsMap() {
     try {
-      const flags = await FeatureFlag.find({});
-      const map = {
-        showCliFeature: false,
-        showPricingFeature: false,
-        showReactProviderFeature: false,
-        showLiveDemo: true,
-        showFeaturesGrid: true
-      };
-      flags.forEach(f => {
-        map[f.key] = f.enabled;
-      });
-      return map;
+      const { getMongoStatus } = require('../config/db');
+      if (getMongoStatus()) {
+        const flags = await FeatureFlag.find({});
+        const map = Object.fromEntries(fallbackFlags);
+        flags.forEach(f => {
+          map[f.key] = f.enabled;
+        });
+        return map;
+      } else {
+        return Object.fromEntries(fallbackFlags);
+      }
     } catch (err) {
-      console.warn('[FeatureFlagRepository] Fallback to default flags:', err.message);
-      return {
-        showCliFeature: false,
-        showPricingFeature: false,
-        showReactProviderFeature: false,
-        showLiveDemo: true,
-        showFeaturesGrid: true
-      };
+      return Object.fromEntries(fallbackFlags);
     }
   }
 
   static async setFlag(key, enabled, description = '') {
-    return await FeatureFlag.findOneAndUpdate(
-      { key },
-      { key, enabled, description },
-      { upsert: true, new: true }
-    );
+    fallbackFlags.set(key, enabled);
+    try {
+      const { getMongoStatus } = require('../config/db');
+      if (getMongoStatus()) {
+        return await FeatureFlag.findOneAndUpdate(
+          { key },
+          { key, enabled, description },
+          { upsert: true, new: true }
+        );
+      }
+    } catch (err) {
+      // Handled in fallback
+    }
+    return { key, enabled, description };
   }
 }
 

@@ -21,11 +21,29 @@ import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
+import { fetchFeatureFlags } from '../services/flagsApi';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Terminal, ArrowRight, Search, Activity, AlertCircle, LayoutDashboard, HelpCircle, FileSpreadsheet, FileText, TrendingUp } from 'lucide-react';
+import {
+  Sparkles,
+  Terminal,
+  ArrowRight,
+  Search,
+  Activity,
+  AlertCircle,
+  LayoutDashboard,
+  HelpCircle,
+  FileSpreadsheet,
+  FileText,
+  TrendingUp,
+  Gauge,
+  Server,
+  Tag,
+  Share2
+} from 'lucide-react';
 
 export default function DashboardLayout() {
   const { closeAuthModal } = useAuth();
+  const [flags, setFlags] = useState({ monetizationEnabled: false, showPricingFeature: false });
   const [sites, setSites] = useState([]);
   const [selectedUrl, setSelectedUrl] = useState('');
   const [currentAudit, setCurrentAudit] = useState(null);
@@ -36,6 +54,12 @@ export default function DashboardLayout() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    fetchFeatureFlags().then((data) => {
+      if (data) setFlags(data);
+    }).catch((err) => console.warn('[DashboardLayout] Flags notice:', err));
+  }, []);
 
   // Ensure no popups overlap - close other popups when one opens
   useEffect(() => {
@@ -224,6 +248,7 @@ export default function DashboardLayout() {
         schemaCount={schemaCount}
         onOpenGuide={handleOpenGuide}
         onOpenPricing={handleOpenPricing}
+        flags={flags}
       />
 
       {/* Main Content App Shell - Fixed Independent Vertical Scroll */}
@@ -237,6 +262,7 @@ export default function DashboardLayout() {
           onExportCsv={handleExportCsv}
           onPrintReport={handlePrintReport}
           onOpenPricing={handleOpenPricing}
+          flags={flags}
         />
 
         {/* Main Content Area */}
@@ -379,10 +405,27 @@ export default function DashboardLayout() {
               <Route
                 path="/vitals"
                 element={renderAuditView(
-                  <>
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={Gauge}
+                      iconBg="bg-emerald-50 border-emerald-200 text-emerald-600"
+                      badge="CORE WEB VITALS"
+                      title={`Core Web Vitals Telemetry for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Benchmarking Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS)."
+                      currentAudit={currentAudit}
+                      actions={
+                        <button
+                          onClick={handleOpenGuide}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-xs"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>CWV Guide</span>
+                        </button>
+                      }
+                    />
                     <WebVitalsCard metrics={currentAudit?.performanceMetrics} />
                     <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
-                  </>
+                  </div>
                 )}
               />
 
@@ -390,11 +433,21 @@ export default function DashboardLayout() {
               <Route
                 path="/ssr"
                 element={renderAuditView(
-                  <SsrAuditCard
-                    renderingType={currentAudit?.renderingType}
-                    ssrMeta={currentAudit?.ssrMeta}
-                    seoMeta={currentAudit?.seoMeta}
-                  />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={Server}
+                      iconBg="bg-indigo-50 border-indigo-200 text-indigo-600"
+                      badge="SSR & HYDRATION"
+                      title={`SSR vs. CSR Rendering Evaluation for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Identify search crawler indexation penalties by analyzing raw server HTML versus client hydration DOM output."
+                      currentAudit={currentAudit}
+                    />
+                    <SsrAuditCard
+                      renderingType={currentAudit?.renderingType}
+                      ssrMeta={currentAudit?.ssrMeta}
+                      seoMeta={currentAudit?.seoMeta}
+                    />
+                  </div>
                 )}
               />
 
@@ -402,7 +455,17 @@ export default function DashboardLayout() {
               <Route
                 path="/metatags"
                 element={renderAuditView(
-                  <MetaTagTable seoMeta={currentAudit?.seoMeta} issues={currentAudit?.issues} />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={Tag}
+                      iconBg="bg-cyan-50 border-cyan-200 text-cyan-600"
+                      badge="DYNAMIC META TAGS"
+                      title={`Meta Tags & Search Directives for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Audit title length, meta description, index/follow robots directives, and canonical tags."
+                      currentAudit={currentAudit}
+                    />
+                    <MetaTagTable seoMeta={currentAudit?.seoMeta} issues={currentAudit?.issues} />
+                  </div>
                 )}
               />
 
@@ -410,13 +473,23 @@ export default function DashboardLayout() {
               <Route
                 path="/social"
                 element={renderAuditView(
-                  <SocialPreview
-                    ogTags={currentAudit?.seoMeta?.ogTags}
-                    twitterTags={currentAudit?.seoMeta?.twitterTags}
-                    title={currentAudit?.seoMeta?.title}
-                    description={currentAudit?.seoMeta?.description}
-                    url={currentAudit?.url}
-                  />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={Share2}
+                      iconBg="bg-purple-50 border-purple-200 text-purple-600"
+                      badge="SOCIAL GRAPH PREVIEWS"
+                      title={`Social Link Previews for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Preview OpenGraph and Twitter card rendering as seen across WhatsApp, Slack, LinkedIn, Twitter/X, and Facebook."
+                      currentAudit={currentAudit}
+                    />
+                    <SocialPreview
+                      ogTags={currentAudit?.seoMeta?.ogTags}
+                      twitterTags={currentAudit?.seoMeta?.twitterTags}
+                      title={currentAudit?.seoMeta?.title}
+                      description={currentAudit?.seoMeta?.description}
+                      url={currentAudit?.url}
+                    />
+                  </div>
                 )}
               />
 
@@ -424,7 +497,17 @@ export default function DashboardLayout() {
               <Route
                 path="/trends"
                 element={renderAuditView(
-                  <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={TrendingUp}
+                      iconBg="bg-indigo-50 border-indigo-200 text-indigo-600"
+                      badge="HISTORICAL TELEMETRY"
+                      title={`Historical Telemetry & Score Trajectory for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Continuous Core Web Vitals stability, latency regressions, and performance score tracking across crawls."
+                      currentAudit={currentAudit}
+                    />
+                    <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
+                  </div>
                 )}
               />
 
@@ -432,7 +515,17 @@ export default function DashboardLayout() {
               <Route
                 path="/diff"
                 element={renderAuditView(
-                  <DiffViewer history={history} />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={FileSpreadsheet}
+                      iconBg="bg-amber-50 border-amber-200 text-amber-600"
+                      badge="AUDIT DIFF COMPARISON"
+                      title={`Snapshot Version Comparison for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Side-by-side metric and meta tag diffing between recent crawl snapshots to verify regressions or fixes."
+                      currentAudit={currentAudit}
+                    />
+                    <DiffViewer history={history} />
+                  </div>
                 )}
               />
 
@@ -440,7 +533,17 @@ export default function DashboardLayout() {
               <Route
                 path="/schema"
                 element={renderAuditView(
-                  <StructuredDataViewer structuredData={currentAudit?.seoMeta?.structuredData} />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={Terminal}
+                      iconBg="bg-slate-100 border-slate-200 text-slate-800"
+                      badge="JSON-LD STRUCTURED DATA"
+                      title={`Schema.org & Rich Results for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Validate Schema.org microdata, search rich results, and entity definitions extracted from DOM."
+                      currentAudit={currentAudit}
+                    />
+                    <StructuredDataViewer structuredData={currentAudit?.seoMeta?.structuredData} />
+                  </div>
                 )}
               />
 
@@ -452,6 +555,7 @@ export default function DashboardLayout() {
                     audit={currentAudit}
                     onOpenPricing={handleOpenPricing}
                     onOpenGuide={handleOpenGuide}
+                    flags={flags}
                   />
                 )}
               />

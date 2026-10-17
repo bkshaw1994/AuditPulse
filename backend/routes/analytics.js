@@ -67,6 +67,10 @@ function isLocalhost(req) {
   const clientFlag = req.body?.isLocalhost === true || req.query?.isLocalhost === 'true';
   if (clientFlag) return true;
 
+  if (req.headers['x-simulated-external-visitor'] === 'true') {
+    return false;
+  }
+
   const host = (req.headers.host || '').toLowerCase();
   const origin = (req.headers.origin || '').toLowerCase();
   const referer = (req.headers.referer || '').toLowerCase();

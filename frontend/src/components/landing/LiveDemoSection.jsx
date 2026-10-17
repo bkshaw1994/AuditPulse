@@ -7,46 +7,59 @@ import {
   AlertTriangle, 
   Search, 
   Sparkles,
-  ShieldAlert
+  ShieldAlert,
+  ArrowRight,
+  Zap,
+  Gauge
 } from 'lucide-react';
+import { runAudit } from '../../services/api';
 
-export default function LiveDemoSection({ onOpenFullDashboard }) {
+export default function LiveDemoSection() {
   const [targetUrl, setTargetUrl] = useState('https://react.dev');
   const [isAuditing, setIsAuditing] = useState(false);
-  const [auditResult, setAuditResult] = useState({
-    url: 'https://react.dev',
-    overallScore: 94,
-    tti: '1.2s',
-    lcp: '1.4s',
-    cls: '0.01',
-    ttfb: '180ms',
-    renderingType: 'Hybrid (SSR + Client Hydration)',
-    bottlenecks: [
-      { component: '<HeaderDropdown />', impact: '14ms re-render', status: 'optimal' },
-      { component: '<SearchModal />', impact: '32ms idle diffing', status: 'minor' }
-    ]
-  });
+  const [auditResult, setAuditResult] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleRunSampleAudit = (e) => {
+  const handleRunSampleAudit = async (e) => {
     e.preventDefault();
+    if (!targetUrl || !targetUrl.trim()) return;
+
+    let formatted = targetUrl.trim();
+    if (!/^https?:\/\//i.test(formatted)) {
+      formatted = 'https://' + formatted;
+    }
+
     setIsAuditing(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const response = await runAudit(formatted);
+      if (response && response.data) {
+        const d = response.data;
+        const perf = d.performanceMetrics || {};
+        const scores = d.scores || {};
+        setAuditResult({
+          url: d.url,
+          domain: d.domain,
+          overallScore: scores.overall || 0,
+          seoScore: scores.seo || 0,
+          perfScore: scores.performance || 0,
+          tti: perf.tti ? `${(perf.tti / 1000).toFixed(2)}s` : `${(perf.domContentLoaded ? (perf.domContentLoaded / 1000).toFixed(2) : '1.20')}s`,
+          lcp: perf.lcp ? `${(perf.lcp / 1000).toFixed(2)}s` : `${(perf.fcp ? (perf.fcp / 1000).toFixed(2) : '1.40')}s`,
+          cls: perf.cls !== undefined ? perf.cls.toFixed(3) : '0.000',
+          ttfb: perf.ttfb ? `${perf.ttfb}ms` : '120ms',
+          renderingType: d.renderingType || 'SPA (Client Rendered)',
+          issues: d.issues || []
+        });
+      } else {
+        throw new Error('Audit did not return report data.');
+      }
+    } catch (err) {
+      console.warn('[LiveDemoSection] Audit error:', err);
+      setError(err.message || 'Audit crawl process failed. Please verify the URL is public and reachable.');
+    } finally {
       setIsAuditing(false);
-      setAuditResult({
-        url: targetUrl,
-        overallScore: Math.floor(Math.random() * 15) + 82,
-        tti: (Math.random() * 2 + 1.1).toFixed(2) + 's',
-        lcp: (Math.random() * 1.5 + 1.0).toFixed(2) + 's',
-        cls: '0.0' + Math.floor(Math.random() * 8),
-        ttfb: Math.floor(Math.random() * 120 + 100) + 'ms',
-        renderingType: 'Single Page Application (React 18)',
-        bottlenecks: [
-          { component: '<ProductGrid items={120} />', impact: '184ms main-thread lock', status: 'critical' },
-          { component: '<SidebarFilter />', impact: '48ms un-memoized re-render', status: 'warn' },
-          { component: '<UserAvatar />', impact: '4ms render', status: 'optimal' }
-        ]
-      });
-    }, 1200);
+    }
   };
 
   return (
@@ -58,13 +71,13 @@ export default function LiveDemoSection({ onOpenFullDashboard }) {
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs font-mono text-cyan-800 font-medium">
             <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-            <span>Interactive Sandbox</span>
+            <span>Live Interactive Sandbox</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-            Try AuditPulse <span className="text-gradient-cyan-light">Live Right Now</span>
+            Audit Any Live Site <span className="text-gradient-cyan-light">In Real Time</span>
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            Test any React SPA URL below to see how our main-thread telemetry uncovers hidden re-render bottlenecks.
+            Enter any public website or React SPA URL below to execute a real headless Chromium crawl and inspect Core Web Vitals telemetry.
           </p>
         </div>
 
@@ -90,12 +103,12 @@ export default function LiveDemoSection({ onOpenFullDashboard }) {
             <button
               type="submit"
               disabled={isAuditing}
-              className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
             >
               {isAuditing ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Auditing React Fiber...</span>
+                  <span>Crawling Live Site...</span>
                 </>
               ) : (
                 <>
@@ -108,105 +121,132 @@ export default function LiveDemoSection({ onOpenFullDashboard }) {
 
           {/* Quick Presets */}
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-500">
-            <span>Preset targets:</span>
-            {['https://react.dev', 'https://vercel.com', 'https://nextjs.org'].map((preset) => (
+            <span>Or test sample live sites:</span>
+            {['https://react.dev', 'https://nextjs.org', 'https://news.ycombinator.com'].map((preset) => (
               <button
                 key={preset}
                 type="button"
                 onClick={() => setTargetUrl(preset)}
-                className="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-slate-400 hover:text-slate-900 transition-colors shadow-sm font-medium"
+                className="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-slate-400 hover:text-slate-900 transition-colors shadow-sm font-medium cursor-pointer"
               >
                 {preset}
               </button>
             ))}
           </div>
 
+          {/* Error Banner */}
+          {error && (
+            <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Results Screen */}
-          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-6">
-            
-            {/* Header row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-mono font-bold text-xl shadow-sm">
-                  {auditResult.overallScore}
-                </div>
-                <div>
-                  <h4 className="text-slate-900 font-bold text-base font-mono flex items-center gap-2">
-                    {auditResult.url}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-mono">
-                    {auditResult.renderingType}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono font-semibold">
-                  Passed 18 Fiber Checks
-                </span>
-              </div>
-            </div>
-
-            {/* Core Web Vitals Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
-                <div className="text-[11px] text-slate-500">Time to Interactive</div>
-                <div className="text-lg font-bold text-indigo-600 mt-1">{auditResult.tti}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
-                <div className="text-[11px] text-slate-500">Largest Contentful (LCP)</div>
-                <div className="text-lg font-bold text-emerald-600 mt-1">{auditResult.lcp}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
-                <div className="text-[11px] text-slate-500">Layout Shift (CLS)</div>
-                <div className="text-lg font-bold text-emerald-600 mt-1">{auditResult.cls}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
-                <div className="text-[11px] text-slate-500">Time to First Byte</div>
-                <div className="text-lg font-bold text-cyan-600 mt-1">{auditResult.ttfb}</div>
-              </div>
-            </div>
-
-            {/* Component Bottleneck List */}
-            <div className="space-y-3">
-              <div className="text-xs font-mono uppercase text-slate-500 tracking-wider flex items-center justify-between font-semibold">
-                <span>Detected Main-Thread Component Locks</span>
-                <span className="text-indigo-600">Profiler Telemetry</span>
-              </div>
-
-              <div className="space-y-2">
-                {auditResult.bottlenecks.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-white border border-slate-200 text-xs font-mono shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      {item.status === 'critical' ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-600" />
-                      ) : item.status === 'warn' ? (
-                        <ShieldAlert className="w-4 h-4 text-amber-600" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
-                      )}
-                      <span className="text-slate-900 font-semibold">{item.component}</span>
-                    </div>
-                    <span className={item.status === 'critical' ? 'text-rose-600 font-bold' : item.status === 'warn' ? 'text-amber-600 font-semibold' : 'text-emerald-600 font-semibold'}>
-                      {item.impact}
-                    </span>
+          {auditResult ? (
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-6">
+              
+              {/* Header row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-mono font-bold text-xl shadow-sm">
+                    {auditResult.overallScore}
                   </div>
-                ))}
+                  <div>
+                    <h4 className="text-slate-900 font-bold text-base font-mono flex items-center gap-2">
+                      {auditResult.url}
+                    </h4>
+                    <p className="text-xs text-slate-500 font-mono">
+                      {auditResult.renderingType} &bull; SEO Score: {auditResult.seoScore} &bull; Perf Score: {auditResult.perfScore}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono font-semibold">
+                    Real-Time Crawl Complete
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Launch Full Workspace Button */}
-            <div className="pt-3 text-center">
-              <Link
-                to="/app/report"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition"
-              >
-                <span>View Full Audit Report & Score Improvement Roadmap</span>
-                <span className="text-indigo-200">&rarr;</span>
-              </Link>
-            </div>
+              {/* Core Web Vitals Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
+                  <div className="text-[11px] text-slate-500">Time to Interactive</div>
+                  <div className="text-lg font-bold text-indigo-600 mt-1">{auditResult.tti}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
+                  <div className="text-[11px] text-slate-500">Largest Contentful (LCP)</div>
+                  <div className="text-lg font-bold text-emerald-600 mt-1">{auditResult.lcp}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
+                  <div className="text-[11px] text-slate-500">Layout Shift (CLS)</div>
+                  <div className="text-lg font-bold text-emerald-600 mt-1">{auditResult.cls}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 font-mono shadow-sm">
+                  <div className="text-[11px] text-slate-500">Time to First Byte</div>
+                  <div className="text-lg font-bold text-cyan-600 mt-1">{auditResult.ttfb}</div>
+                </div>
+              </div>
 
-          </div>
+              {/* Diagnostic Issues List */}
+              <div className="space-y-3">
+                <div className="text-xs font-mono uppercase text-slate-500 tracking-wider flex items-center justify-between font-semibold">
+                  <span>Detected Crawl Diagnostics</span>
+                  <span className="text-indigo-600">{auditResult.issues.length} Issues Identified</span>
+                </div>
+
+                {auditResult.issues.length > 0 ? (
+                  <div className="space-y-2">
+                    {auditResult.issues.slice(0, 3).map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-white border border-slate-200 text-xs font-mono shadow-sm">
+                        <div className="flex items-center gap-2.5">
+                          {item.severity === 'critical' ? (
+                            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                          ) : (
+                            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                          )}
+                          <span className="text-slate-900 font-semibold">{item.title}</span>
+                        </div>
+                        <span className="text-slate-500 text-[11px] max-w-xs truncate hidden sm:inline">
+                          {item.description}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span>No critical Core Web Vitals penalties identified on this page.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Launch Full Workspace Button */}
+              <div className="pt-3 text-center">
+                <Link
+                  to="/app/overview"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
+                >
+                  <span>Open Full Studio Dashboard & Optimization Roadmap</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl bg-slate-50/70 border border-dashed border-slate-300 text-center space-y-3">
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-indigo-600 shadow-xs">
+                <Gauge className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-800">
+                Ready for Live Performance Benchmark
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Paste any live website URL above and click &quot;Run Live Audit&quot; to test your site against real Core Web Vitals and SSR hydration criteria.
+              </p>
+            </div>
+          )}
 
         </div>
 

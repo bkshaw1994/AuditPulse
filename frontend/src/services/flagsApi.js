@@ -12,7 +12,8 @@ export async function fetchFeatureFlags() {
       showPricingFeature: false,
       showReactProviderFeature: false,
       showLiveDemo: true,
-      showFeaturesGrid: true
+      showFeaturesGrid: true,
+      monetizationEnabled: false
     };
   } catch (err) {
     console.warn('[flagsApi] Backend connection error, using default flags:', err.message);
@@ -21,7 +22,8 @@ export async function fetchFeatureFlags() {
       showPricingFeature: false,
       showReactProviderFeature: false,
       showLiveDemo: true,
-      showFeaturesGrid: true
+      showFeaturesGrid: true,
+      monetizationEnabled: false
     };
   }
 }

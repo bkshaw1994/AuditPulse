@@ -77,17 +77,26 @@ router.post('/webhook', express.raw({ type: 'application/json' }), (req, res) =>
     const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || 'ap_webhook_secret_dev';
     const signature = req.headers['x-signature'];
 
-    // Verify HMAC SHA-256 signature if secret is configured in production
-    if (process.env.NODE_ENV === 'production' && secret) {
+    // Verify HMAC SHA-256 signature if secret and signature are configured
+    if (secret && signature) {
+      const rawBody = Buffer.isBuffer(req.body)
+        ? req.body
+        : typeof req.body === 'string'
+        ? req.body
+        : JSON.stringify(req.body);
       const hmac = crypto.createHmac('sha256', secret);
-      const digest = hmac.update(req.body).digest('hex');
+      const digest = hmac.update(rawBody).digest('hex');
       if (signature !== digest) {
         console.warn('[Billing Webhook] Invalid webhook signature detected.');
         return res.status(401).json({ error: 'Invalid HMAC signature' });
       }
     }
 
-    const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const payload = Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : typeof req.body === 'string'
+      ? JSON.parse(req.body)
+      : req.body;
     const eventName = payload.meta?.event_name || payload.event_name || 'subscription_created';
     const customData = payload.meta?.custom_data || {};
     const domain = customData.domain || 'pulsecart-store.io';

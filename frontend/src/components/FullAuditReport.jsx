@@ -20,8 +20,9 @@ import SocialPreview from './SocialPreview';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import PageHeader from './PageHeader';
 
-export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide }) {
+export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide, flags = {} }) {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'advisor' | 'fixes' | 'vitals' | 'ssr' | 'seo' | 'social'
+  const showMonetization = flags.monetizationEnabled || flags.showPricingFeature;
 
   if (!audit || !audit.scores) {
     return (
@@ -90,13 +91,15 @@ export default function FullAuditReport({ audit = {}, onOpenPricing, onOpenGuide
               <Printer className="w-3.5 h-3.5 text-slate-600" />
               <span>Print Report</span>
             </button>
-            <button
-              onClick={onOpenPricing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-              <span>Upgrade Pro</span>
-            </button>
+            {showMonetization && (
+              <button
+                onClick={onOpenPricing}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                <span>Upgrade Pro</span>
+              </button>
+            )}
           </>
         }
       />

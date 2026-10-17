@@ -58,6 +58,13 @@ function validatePublicUrl(targetUrl) {
 
   const hostname = parsedUrl.hostname.toLowerCase();
   
+  if (process.env.ALLOW_TEST_LOOPBACK === 'true') {
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error(`Unsupported protocol "${parsedUrl.protocol}". Only HTTP and HTTPS are allowed.`);
+    }
+    return parsedUrl;
+  }
+  
   const forbiddenHostnames = [
     'localhost',
     '127.0.0.1',
@@ -880,4 +887,21 @@ function analyzeSeoAndPerformance(seoMeta, ssrMeta = {}, renderingType = 'CSR', 
   };
 }
 
-module.exports = { auditUrl, validatePublicUrl, inspectRawSsrHtml };
+module.exports = {
+  auditUrl,
+  auditUrlWithHttp,
+  launchBrowser,
+  validatePublicUrl,
+  inspectRawSsrHtml,
+  decodeHtmlEntities,
+  extractMetaContent,
+  extractTitle,
+  extractCanonical,
+  extractAllMetaTags,
+  parseRawHtmlMeta,
+  getEmptySsrMeta,
+  auditSeoMeta,
+  auditSocialMeta,
+  auditPerformance,
+  analyzeSeoAndPerformance
+};

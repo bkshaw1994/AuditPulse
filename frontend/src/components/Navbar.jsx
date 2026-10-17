@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal, FileText, User, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Navbar({ currentAudit, isConnected, onExportJson, onPrintReport, onExportCsv, onOpenPricing }) {
+export default function Navbar({ currentAudit, isConnected, onExportJson, onPrintReport, onExportCsv, onOpenPricing, flags = {} }) {
   const { user, isAuthenticated, logout, openAuthModal, requireAuth } = useAuth();
+  const showMonetization = flags.monetizationEnabled || flags.showPricingFeature;
 
   const handleUpgradeClick = () => {
     // Show package details first so user can review and select options
@@ -47,13 +48,15 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
 
       {/* Action Controls & Health Status */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={handleUpgradeClick}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-          <span>{user?.isPro ? 'Pro Active' : 'Upgrade Pro'}</span>
-        </button>
+        {showMonetization && (
+          <button
+            onClick={handleUpgradeClick}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+            <span>{user?.isPro ? 'Pro Active' : 'Upgrade Pro'}</span>
+          </button>
+        )}
 
         {currentAudit && (
           <div className="hidden md:flex items-center gap-1.5 border-l border-slate-200 pl-3">

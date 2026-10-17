@@ -20,8 +20,10 @@ router.get('/', async (req, res) => {
       flags: {
         showCliFeature: false,
         showPricingFeature: false,
+        showReactProviderFeature: false,
         showLiveDemo: true,
-        showFeaturesGrid: true
+        showFeaturesGrid: true,
+        monetizationEnabled: false
       }
     });
   }
