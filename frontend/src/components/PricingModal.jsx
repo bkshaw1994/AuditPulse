@@ -88,6 +88,11 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
   const handleCheckout = (planKey) => {
     // If not authenticated, require login or registration!
     if (!isAuthenticated) {
+      // Close PricingModal first so no popup overlaps another popup
+      if (typeof onClose === 'function') {
+        onClose();
+      }
+
       requireAuth({
         intent: 'pro',
         mode: 'signup',

@@ -21,9 +21,11 @@ import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Sparkles, Terminal, ArrowRight, Search, Activity, AlertCircle, LayoutDashboard, HelpCircle, FileSpreadsheet, FileText, TrendingUp } from 'lucide-react';
 
 export default function DashboardLayout() {
+  const { closeAuthModal } = useAuth();
   const [sites, setSites] = useState([]);
   const [selectedUrl, setSelectedUrl] = useState('');
   const [currentAudit, setCurrentAudit] = useState(null);
@@ -34,6 +36,28 @@ export default function DashboardLayout() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const location = useLocation();
+
+  // Ensure no popups overlap - close other popups when one opens
+  useEffect(() => {
+    const handleCloseAll = () => {
+      setIsPricingOpen(false);
+      setIsGuideOpen(false);
+    };
+    window.addEventListener('close-all-app-modals', handleCloseAll);
+    return () => window.removeEventListener('close-all-app-modals', handleCloseAll);
+  }, []);
+
+  const handleOpenPricing = () => {
+    setIsGuideOpen(false);
+    closeAuthModal();
+    setIsPricingOpen(true);
+  };
+
+  const handleOpenGuide = () => {
+    setIsPricingOpen(false);
+    closeAuthModal();
+    setIsGuideOpen(true);
+  };
 
   useEffect(() => {
     loadSites();
@@ -198,8 +222,8 @@ export default function DashboardLayout() {
       <Sidebar
         issuesCount={issuesCount}
         schemaCount={schemaCount}
-        onOpenGuide={() => setIsGuideOpen(true)}
-        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenGuide={handleOpenGuide}
+        onOpenPricing={handleOpenPricing}
       />
 
       {/* Main Content App Shell - Fixed Independent Vertical Scroll */}
@@ -212,7 +236,7 @@ export default function DashboardLayout() {
           onExportJson={handleExportJson}
           onExportCsv={handleExportCsv}
           onPrintReport={handlePrintReport}
-          onOpenPricing={() => setIsPricingOpen(true)}
+          onOpenPricing={handleOpenPricing}
         />
 
         {/* Main Content Area */}
@@ -256,7 +280,7 @@ export default function DashboardLayout() {
               {/* Gated Slack Alerts Page */}
               <Route
                 path="/alerts"
-                element={<AlertSettingsCard currentAudit={currentAudit} onUpgradeClick={() => setIsPricingOpen(true)} />}
+                element={<AlertSettingsCard currentAudit={currentAudit} onUpgradeClick={handleOpenPricing} />}
               />
 
               {/* Route 1: Overview & Vitals */}
@@ -274,7 +298,7 @@ export default function DashboardLayout() {
                       actions={
                         <>
                           <button
-                            onClick={() => setIsGuideOpen(true)}
+                            onClick={handleOpenGuide}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-xs"
                           >
                             <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
@@ -303,11 +327,11 @@ export default function DashboardLayout() {
                       timestamp={currentAudit?.timestamp}
                       domain={currentAudit?.domain}
                     />
-                    <ExecutiveSummary audit={currentAudit} onOpenGuide={() => setIsGuideOpen(true)} />
+                    <ExecutiveSummary audit={currentAudit} onOpenGuide={handleOpenGuide} />
                     {/* Priority Score Improvement Action Plan */}
                     <ScoreImprovementAdvisor
                       audit={currentAudit}
-                      onOpenGuide={() => setIsGuideOpen(true)}
+                      onOpenGuide={handleOpenGuide}
                     />
                     <SsrAuditCard
                       renderingType={currentAudit?.renderingType}
@@ -315,7 +339,7 @@ export default function DashboardLayout() {
                       seoMeta={currentAudit?.seoMeta}
                     />
                     <WebVitalsCard metrics={currentAudit?.performanceMetrics} />
-                    <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
+                    <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
                     <IssuesList issues={currentAudit?.issues} />
                   </>
                 )}
@@ -335,7 +359,7 @@ export default function DashboardLayout() {
                       currentAudit={currentAudit}
                       actions={
                         <button
-                          onClick={() => setIsGuideOpen(true)}
+                          onClick={handleOpenGuide}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-xs"
                         >
                           <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
@@ -345,7 +369,7 @@ export default function DashboardLayout() {
                     />
                     <ScoreImprovementAdvisor
                       audit={currentAudit}
-                      onOpenGuide={() => setIsGuideOpen(true)}
+                      onOpenGuide={handleOpenGuide}
                     />
                   </div>
                 )}
@@ -357,7 +381,7 @@ export default function DashboardLayout() {
                 element={renderAuditView(
                   <>
                     <WebVitalsCard metrics={currentAudit?.performanceMetrics} />
-                    <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
+                    <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
                   </>
                 )}
               />
@@ -400,7 +424,7 @@ export default function DashboardLayout() {
               <Route
                 path="/trends"
                 element={renderAuditView(
-                  <TrendChart history={history} onUpgradeClick={() => setIsPricingOpen(true)} />
+                  <TrendChart history={history} onUpgradeClick={handleOpenPricing} />
                 )}
               />
 
@@ -426,8 +450,8 @@ export default function DashboardLayout() {
                 element={renderAuditView(
                   <FullAuditReport
                     audit={currentAudit}
-                    onOpenPricing={() => setIsPricingOpen(true)}
-                    onOpenGuide={() => setIsGuideOpen(true)}
+                    onOpenPricing={handleOpenPricing}
+                    onOpenGuide={handleOpenGuide}
                   />
                 )}
               />

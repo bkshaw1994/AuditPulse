@@ -137,6 +137,9 @@ export function AuthProvider({ children }) {
     intent = null,
     onAuthenticated = null
   } = {}) => {
+    // Ensure no other popups or drawers overlap
+    window.dispatchEvent(new CustomEvent('close-all-app-modals'));
+
     setAuthModal({
       isOpen: true,
       mode,
