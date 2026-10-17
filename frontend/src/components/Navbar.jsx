@@ -7,19 +7,8 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
   const { user, isAuthenticated, logout, openAuthModal, requireAuth } = useAuth();
 
   const handleUpgradeClick = () => {
-    if (!isAuthenticated) {
-      requireAuth({
-        intent: 'pro',
-        mode: 'signup',
-        title: 'Sign In to Upgrade',
-        subtitle: 'Please sign in or create an account to activate your Pro subscription.',
-        onAuthenticated: () => {
-          onOpenPricing();
-        }
-      });
-    } else {
-      onOpenPricing();
-    }
+    // Show package details first so user can review and select options
+    onOpenPricing();
   };
 
   return (

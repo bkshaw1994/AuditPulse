@@ -325,21 +325,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    requireAuth({
-                      intent: 'pro',
-                      mode: 'signup',
-                      title: 'Sign In to Unlock 90-Day Retention',
-                      subtitle: 'Please sign in or create an account to activate your Pro subscription (₹1,999/mo).',
-                      onAuthenticated: () => {
-                        if (typeof onUpgradeClick === 'function') onUpgradeClick();
-                      }
-                    });
-                  } else {
-                    if (typeof onUpgradeClick === 'function') onUpgradeClick();
-                  }
-                }}
+                onClick={onUpgradeClick}
                 className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
