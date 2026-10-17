@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Check, Zap, Sparkles, Shield, CreditCard, Building2 } from 'lucide-react';
+import { Check, Zap, Sparkles, Shield, CreditCard, Building2, UserCheck, Lock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const PRICING_DATA = {
   INR: {
@@ -55,10 +56,30 @@ const PRICING_DATA = {
 };
 
 export default function PricingSection() {
+  const { user, isAuthenticated, isPro, requireAuth } = useAuth();
   const [currency, setCurrency] = useState('INR');
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
 
   const active = PRICING_DATA[currency];
+
+  const handleProTrialClick = (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      requireAuth({
+        intent: 'pro',
+        mode: 'signup',
+        title: 'Sign In to Subscribe to Pro',
+        subtitle: `Create your account or sign in to activate your ${active.symbol}${
+          billingCycle === 'monthly' ? active.pro.monthly : active.pro.annual
+        }/mo Pro subscription.`,
+        onAuthenticated: () => {
+          window.location.href = '/app';
+        }
+      });
+    } else {
+      window.location.href = '/app';
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 md:py-28 relative bg-slate-50/50 border-t border-slate-200">
@@ -235,12 +256,12 @@ export default function PricingSection() {
               </ul>
             </div>
 
-            <a
-              href="/app"
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-center text-xs font-semibold text-white shadow-md shadow-indigo-600/20 transition-all block"
+            <button
+              onClick={handleProTrialClick}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-center text-xs font-semibold text-white shadow-md shadow-indigo-600/20 transition-all block cursor-pointer"
             >
-              Start 14-Day Free Pro Trial
-            </a>
+              {isAuthenticated ? (isPro ? 'Pro Active — Open Dashboard' : 'Activate Pro Subscription') : 'Start 14-Day Free Pro Trial'}
+            </button>
           </div>
 
           {/* Enterprise Plan */}

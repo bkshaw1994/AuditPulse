@@ -10,9 +10,11 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { TrendingUp, Lock, Sparkles, Activity } from 'lucide-react';
+import { TrendingUp, Lock, Sparkles, Activity, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function TrendChart({ history = [], onUpgradeClick }) {
+  const { isPro, isAuthenticated, requireAuth } = useAuth();
   const [metricMode, setMetricMode] = useState('vitals'); // 'vitals' | 'latency' | 'traffic'
   const [timeRange, setTimeRange] = useState('24h'); // '24h' | '7d' | '30d' | '90d'
 
@@ -45,7 +47,7 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
 
   const latestPoint = rawData[rawData.length - 1] || null;
 
-  const isGatedRange = timeRange !== '24h';
+  const isGatedRange = !isPro && timeRange !== '24h';
 
   if (!rawData || rawData.length === 0) {
     return (
@@ -323,8 +325,22 @@ export default function TrendChart({ history = [], onUpgradeClick }) {
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={onUpgradeClick}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    requireAuth({
+                      intent: 'pro',
+                      mode: 'signup',
+                      title: 'Sign In to Unlock 90-Day Retention',
+                      subtitle: 'Please sign in or create an account to activate your Pro subscription (₹1,999/mo).',
+                      onAuthenticated: () => {
+                        if (typeof onUpgradeClick === 'function') onUpgradeClick();
+                      }
+                    });
+                  } else {
+                    if (typeof onUpgradeClick === 'function') onUpgradeClick();
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Upgrade to Pro — ₹1,999/mo</span>

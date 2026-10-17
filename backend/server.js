@@ -8,6 +8,7 @@ const { connectDB } = require('./config/db');
 const auditRoutes = require('./routes/audit');
 const flagRoutes = require('./routes/flags');
 const billingRoutes = require('./routes/billing');
+const authRoutes = require('./routes/auth');
 const { CrawlResultRepository } = require('./models/CrawlResult');
 const { FeatureFlagRepository } = require('./models/FeatureFlag');
 
@@ -77,6 +78,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/audit', auditRoutes);
 app.use('/api/flags', flagRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

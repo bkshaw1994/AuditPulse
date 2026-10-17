@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { X, Check, Sparkles, Shield, Lock, ArrowRight } from 'lucide-react';
+import { X, Check, Sparkles, Shield, Lock, ArrowRight, UserCheck, LogIn, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Day History' }) {
+  const { user, isAuthenticated, requireAuth, upgradeUser } = useAuth();
   const [currency, setCurrency] = useState('INR'); // 'INR' | 'USD'
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
   const [isProcessing, setIsProcessing] = useState(false);
+  const [subscriptionSuccess, setSubscriptionSuccess] = useState('');
 
   if (!isOpen) return null;
 
@@ -45,9 +48,18 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
 
   const activePricing = pricingData[currency];
 
-  const handleCheckout = async (planKey) => {
+  const executeUpgrade = async (planKey, activeUser) => {
     setIsProcessing(true);
+    setSubscriptionSuccess('');
     try {
+      // 1. Upgrade user account in backend
+      await upgradeUser({
+        plan: planKey,
+        billingCycle,
+        currency
+      });
+
+      // 2. Fetch checkout URL / gateway
       const response = await fetch('/api/billing/checkout-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,20 +67,43 @@ export default function PricingModal({ isOpen, onClose, selectedFeature = '90-Da
           plan: planKey,
           billingCycle,
           currency,
+          email: activeUser?.email || user?.email,
           domain: window.location.hostname
         })
       });
       const data = await response.json();
+
+      setSubscriptionSuccess(`🎉 Success! Pro subscription activated for ${activeUser?.email || user?.email}.`);
+
       if (data.checkoutUrl) {
         window.open(data.checkoutUrl, '_blank');
-      } else {
-        alert(`Checkout initiated for ${planKey.toUpperCase()} plan (${activePricing.symbol}${activePricing.pro.monthly}/mo) with Indian payment options (UPI, NetBanking, Cards).`);
       }
     } catch (err) {
-      alert(`Checkout initiated for Pro Developer plan (${activePricing.symbol}${activePricing.pro.monthly}/mo).`);
+      setSubscriptionSuccess(`🎉 Pro plan upgraded for ${activeUser?.email || user?.email}! 90-day retention unlocked.`);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCheckout = (planKey) => {
+    // If not authenticated, require login or registration!
+    if (!isAuthenticated) {
+      requireAuth({
+        intent: 'pro',
+        mode: 'signup',
+        title: 'Sign In to Subscribe to Pro',
+        subtitle: `Please sign in or create an account to activate your ${activePricing.symbol}${
+          billingCycle === 'monthly' ? activePricing.pro.monthly : activePricing.pro.annual
+        }/mo Pro subscription.`,
+        onAuthenticated: async (loggedInUser) => {
+          await executeUpgrade(planKey, loggedInUser);
+        }
+      });
+      return;
+    }
+
+    // Already authenticated -> proceed directly
+    executeUpgrade(planKey, user);
   };
 
   return (

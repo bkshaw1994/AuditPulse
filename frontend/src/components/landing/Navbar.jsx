@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Menu, X, ArrowRight, Sparkles, LayoutDashboard, FileText } from 'lucide-react';
+import { Activity, Menu, X, ArrowRight, Sparkles, LayoutDashboard, FileText, User, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) {
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // DB feature flags
@@ -65,6 +67,33 @@ export default function Navbar({ onSwitchToDashboard, activeMode, flags = {} }) 
 
         {/* Action Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2 pr-2">
+              <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-bold text-slate-800 leading-none">{user.name}</span>
+                <span className="text-[10px] text-slate-400 font-mono leading-tight">{user.isPro ? 'Pro Active' : 'Free Tier'}</span>
+              </div>
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition text-[11px]"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal({ mode: 'login' })}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition shadow-xs cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5 text-slate-500" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           <Link
             to="/app/report"
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/90 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 text-xs font-mono transition-all font-semibold"

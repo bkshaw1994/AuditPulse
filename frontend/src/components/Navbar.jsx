@@ -1,8 +1,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal, FileText } from 'lucide-react';
+import { Download, Printer, FileSpreadsheet, Home, Sparkles, Terminal, FileText, User, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ currentAudit, isConnected, onExportJson, onPrintReport, onExportCsv, onOpenPricing }) {
+  const { user, isAuthenticated, logout, openAuthModal, requireAuth } = useAuth();
+
+  const handleUpgradeClick = () => {
+    if (!isAuthenticated) {
+      requireAuth({
+        intent: 'pro',
+        mode: 'signup',
+        title: 'Sign In to Upgrade',
+        subtitle: 'Please sign in or create an account to activate your Pro subscription.',
+        onAuthenticated: () => {
+          onOpenPricing();
+        }
+      });
+    } else {
+      onOpenPricing();
+    }
+  };
+
   return (
     <header className="h-16 bg-white/90 border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30 backdrop-blur-xl shadow-sm">
       
@@ -40,11 +59,11 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
       {/* Action Controls & Health Status */}
       <div className="flex items-center gap-3">
         <button
-          onClick={onOpenPricing}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm"
+          onClick={handleUpgradeClick}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm cursor-pointer"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-          <span>Upgrade Pro</span>
+          <span>{user?.isPro ? 'Pro Active' : 'Upgrade Pro'}</span>
         </button>
 
         {currentAudit && (
@@ -81,6 +100,34 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
             {isConnected ? 'API Online' : 'Offline'}
           </span>
         </div>
+
+        {/* User Account / Profile Section */}
+        {isAuthenticated ? (
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div className="hidden xl:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-800 leading-none">{user.name || 'Developer'}</span>
+              <span className="text-[10px] text-slate-400 font-mono leading-tight">{user.isPro ? 'Pro Member' : 'Free Tier'}</span>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition text-[11px]"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => openAuthModal({ mode: 'login' })}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition shadow-xs"
+          >
+            <User className="w-3.5 h-3.5 text-slate-500" />
+            <span>Sign In</span>
+          </button>
+        )}
       </div>
     </header>
   );

@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import LandingPage from './components/landing/LandingPage';
 import DashboardLayout from './components/DashboardLayout';
+import { AuthProvider } from './context/AuthContext';
+import AuthModal from './components/AuthModal';
 
 export default function App() {
   return (
-    <>
+    <AuthProvider>
       <Analytics />
       <BrowserRouter>
         <Routes>
@@ -19,7 +21,9 @@ export default function App() {
           {/* Catch-all redirect to Landing Page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        {/* Global Authentication Modal */}
+        <AuthModal />
       </BrowserRouter>
-    </>
+    </AuthProvider>
   );
 }
