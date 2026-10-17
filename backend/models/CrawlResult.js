@@ -190,6 +190,23 @@ class CrawlResultRepository {
       return fallbackStore.find(item => String(item._id) === String(id));
     }
   }
+
+  static async findRecent(limit = 10) {
+    const { getMongoStatus } = require('../config/db');
+    if (getMongoStatus()) {
+      return await MongoModel.find({}).sort({ timestamp: -1 }).limit(limit).exec();
+    } else {
+      return fallbackStore.slice(0, limit);
+    }
+  }
+
+  static async getStats() {
+    const sites = await this.getAllSites();
+    return {
+      totalSites: sites.length,
+      totalAudits: fallbackStore.length
+    };
+  }
 }
 
 module.exports = { MongoModel, CrawlResultRepository };
