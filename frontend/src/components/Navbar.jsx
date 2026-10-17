@@ -39,28 +39,11 @@ export default function Navbar({ currentAudit, isConnected, onExportJson, onPrin
 
       {/* Action Controls & Health Status */}
       <div className="flex items-center gap-3">
-        <Link
-          to="/app/report"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs"
-          title="View Full Audit Report & Optimization Roadmap"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Full Audit Report</span>
-        </Link>
-
-        <Link
-          to="/app/setup"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-sm"
-        >
-          <Terminal className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Install SDK</span>
-        </Link>
-
         <button
           onClick={onOpenPricing}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold transition shadow-sm"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="w-3.5 h-3.5 text-amber-200" />
           <span>Upgrade Pro</span>
         </button>
 

@@ -64,63 +64,42 @@ export default function ExecutiveSummary({ audit = {}, onOpenGuide }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 space-y-6">
       
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className={`w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+      {/* Diagnostics Section Sub-Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
             isIndexable ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-rose-50 border-rose-200 text-rose-600'
           }`}>
-            {isIndexable ? <CheckCircle2 className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
+            {isIndexable ? <CheckCircle2 className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-lg font-bold text-slate-900">
-                Executive Audit Diagnostic Summary
+              <h3 className="text-base font-bold text-slate-900">
+                Core Web Vitals & Indexability Diagnostics
               </h3>
               {isIndexable ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono font-semibold">
-                  ✓ Search Engine Indexable
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-semibold">
+                  ✓ Search Indexable
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono font-semibold">
-                  ⚠️ Indexability Issues Detected
+                <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-mono font-semibold">
+                  ⚠️ Gaps Detected
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Prioritized action items and diagnostic findings for frontend performance & SEO
+            <p className="text-xs text-slate-500">
+              Diagnostic findings across LCP, INP, TTFB, and React hydration latency
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/app/report"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>View Full Report</span>
-          </Link>
-          <button
-            onClick={onOpenGuide}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors shadow-xs"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-            <span>CWV Guide</span>
-          </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={handleCopyTextSummary}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs"
           >
             {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{copiedSummary ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors shadow-xs"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            <span>CSV</span>
+            <span>{copiedSummary ? 'Copied' : 'Copy Summary'}</span>
           </button>
         </div>
       </div>

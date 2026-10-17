@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import PageHeader from './PageHeader';
 import AuditForm from './AuditForm';
 import ExecutiveSummary from './ExecutiveSummary';
 import WebVitalsGuideModal from './WebVitalsGuideModal';
@@ -20,7 +21,7 @@ import PricingModal from './PricingModal';
 import FullAuditReport from './FullAuditReport';
 import ScoreImprovementAdvisor from './ScoreImprovementAdvisor';
 import { runAudit, fetchHistory, fetchMonitoredSites } from '../services/api';
-import { Sparkles, Terminal, ArrowRight, Search, Activity, AlertCircle } from 'lucide-react';
+import { Sparkles, Terminal, ArrowRight, Search, Activity, AlertCircle, LayoutDashboard, HelpCircle, FileSpreadsheet, FileText, TrendingUp } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [sites, setSites] = useState([]);
@@ -32,6 +33,7 @@ export default function DashboardLayout() {
   const [isConnected, setIsConnected] = useState(true);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     loadSites();
@@ -216,8 +218,10 @@ export default function DashboardLayout() {
         {/* Main Content Area */}
         <main className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6">
           
-          {/* Audit URL Input Form */}
-          <AuditForm onAuditTrigger={handleTriggerAudit} isLoading={isLoading} error={error} initialUrl={selectedUrl} />
+          {/* Audit URL Input Form - Rendered on audit diagnosis pages */}
+          {location.pathname !== '/app/alerts' && location.pathname !== '/app/setup' && (
+            <AuditForm onAuditTrigger={handleTriggerAudit} isLoading={isLoading} error={error} initialUrl={selectedUrl} />
+          )}
 
           {/* State 1: Audit In Progress */}
           {isLoading && (
@@ -252,7 +256,7 @@ export default function DashboardLayout() {
               {/* Gated Slack Alerts Page */}
               <Route
                 path="/alerts"
-                element={<AlertSettingsCard onUpgradeClick={() => setIsPricingOpen(true)} />}
+                element={<AlertSettingsCard currentAudit={currentAudit} onUpgradeClick={() => setIsPricingOpen(true)} />}
               />
 
               {/* Route 1: Overview & Vitals */}
@@ -260,13 +264,46 @@ export default function DashboardLayout() {
                 path="/overview"
                 element={renderAuditView(
                   <>
-                    <ExecutiveSummary audit={currentAudit} onOpenGuide={() => setIsGuideOpen(true)} />
+                    <PageHeader
+                      icon={LayoutDashboard}
+                      iconBg="bg-indigo-50 border-indigo-200 text-indigo-600"
+                      badge="OVERVIEW & VITALS"
+                      title="Performance & SEO Overview"
+                      subtitle="Live telemetry benchmarking, Core Web Vitals health score, and search indexability status."
+                      currentAudit={currentAudit}
+                      actions={
+                        <>
+                          <button
+                            onClick={() => setIsGuideOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-xs"
+                          >
+                            <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>CWV Guide</span>
+                          </button>
+                          <button
+                            onClick={handleExportCsv}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition shadow-xs"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Export CSV</span>
+                          </button>
+                          <Link
+                            to="/app/report"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Full Report</span>
+                          </Link>
+                        </>
+                      }
+                    />
                     <ScoreCard
                       scores={currentAudit?.scores}
                       issuesCount={issuesCount}
                       timestamp={currentAudit?.timestamp}
                       domain={currentAudit?.domain}
                     />
+                    <ExecutiveSummary audit={currentAudit} onOpenGuide={() => setIsGuideOpen(true)} />
                     {/* Priority Score Improvement Action Plan */}
                     <ScoreImprovementAdvisor
                       audit={currentAudit}
@@ -288,10 +325,29 @@ export default function DashboardLayout() {
               <Route
                 path="/advisor"
                 element={renderAuditView(
-                  <ScoreImprovementAdvisor
-                    audit={currentAudit}
-                    onOpenGuide={() => setIsGuideOpen(true)}
-                  />
+                  <div className="space-y-6">
+                    <PageHeader
+                      icon={TrendingUp}
+                      iconBg="bg-emerald-50 border-emerald-200 text-emerald-600"
+                      badge="OPTIMIZATION ADVISOR"
+                      title={`Score Improvement Roadmap for ${currentAudit?.domain || currentAudit?.url}`}
+                      subtitle="Step-by-step code optimizations tailored specifically to your domain to boost overall health score."
+                      currentAudit={currentAudit}
+                      actions={
+                        <button
+                          onClick={() => setIsGuideOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition shadow-xs"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>CWV Cheat Sheet</span>
+                        </button>
+                      }
+                    />
+                    <ScoreImprovementAdvisor
+                      audit={currentAudit}
+                      onOpenGuide={() => setIsGuideOpen(true)}
+                    />
+                  </div>
                 )}
               />
 
@@ -381,31 +437,23 @@ export default function DashboardLayout() {
                 path="/diagnostics"
                 element={renderAuditView(
                   <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs font-mono">
-                            ACTION CENTER
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {currentAudit?.issues?.length || 0} Issues Detected
-                          </span>
-                        </div>
-                        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                          Production Code Fix Center
-                        </h2>
-                        <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                          Root causes, target file paths, step-by-step instructions, and ready-to-copy code fixes to eliminate Core Web Vitals penalties.
-                        </p>
-                      </div>
-                      <Link
-                        to="/app/report"
-                        className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs shrink-0 flex items-center gap-1.5"
-                      >
-                        <span>Full Audit Report</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
+                    <PageHeader
+                      icon={AlertCircle}
+                      iconBg="bg-rose-50 border-rose-200 text-rose-600"
+                      badge="ACTION CENTER & CODE FIXES"
+                      title="Production Code Diagnostics & Fixes"
+                      subtitle="Root causes, target file paths, step-by-step instructions, and ready-to-copy code fixes to eliminate Core Web Vitals penalties."
+                      currentAudit={currentAudit}
+                      actions={
+                        <Link
+                          to="/app/report"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition shadow-xs"
+                        >
+                          <span>Full Audit Report</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      }
+                    />
                     <IssuesList issues={currentAudit?.issues} />
                   </div>
                 )}

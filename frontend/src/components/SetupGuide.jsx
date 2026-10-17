@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Terminal, Copy, Check, ShieldCheck, Zap, Code2, ArrowRight, Play, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import PageHeader from './PageHeader';
 
 export default function SetupGuide() {
   const [activeTab, setActiveTab] = useState('nextjs-app'); // 'nextjs-app' | 'nextjs-pages' | 'vite-react' | 'vanilla'
@@ -85,38 +86,29 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-2">
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Frictionless Setup
-              </span>
-              <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
-                &lt; 1.5 KB Overhead
-              </span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Connect Your React Application
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Start collecting real-user Core Web Vitals (LCP, INP, CLS) and React hydration latency in under 60 seconds.
-            </p>
-          </div>
-
+    <div className="space-y-6">
+      {/* Unified Standard Page Header */}
+      <PageHeader
+        icon={Terminal}
+        iconBg="bg-slate-100 border-slate-200 text-slate-800"
+        badge="DEVELOPER SDK SETUP"
+        title="Connect Your React Application"
+        subtitle="Start collecting real-user Core Web Vitals (LCP, INP, CLS) and React hydration latency in under 60 seconds."
+        actions={
           <Link
             to="/app/overview"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition shadow-sm self-start md:self-auto"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition shadow-xs"
           >
-            <span>Back to Live Dashboard</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
-        </div>
+        }
+      />
 
+      {/* Main Setup Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
         {/* Step 1: API Key */}
-        <div className="mt-6 pt-2">
+        <div className="pt-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
             Step 1: Your Production Project API Key
           </label>
