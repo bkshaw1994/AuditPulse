@@ -39,28 +39,28 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col min-h-screen sticky top-0 z-40 shadow-sm">
+    <aside className="w-64 h-screen shrink-0 bg-white border-r border-slate-200 flex flex-col z-40 shadow-sm select-none">
       
-      {/* Brand Header */}
-      <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+      {/* Brand Header (Fixed Top) */}
+      <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between shrink-0">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 p-[1px] shadow-sm group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 p-[1px] shadow-sm group-hover:scale-105 transition-transform">
             <div className="w-full h-full bg-white rounded-[11px] flex items-center justify-center">
-              <Activity className="w-5 h-5 text-indigo-600 animate-pulse" />
+              <Activity className="w-4 h-4 text-indigo-600 animate-pulse" />
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1">
-              AuditPulse <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold">v2.0</span>
+            <span className="font-extrabold text-sm tracking-tight text-slate-900 flex items-center gap-1">
+              AuditPulse <span className="text-[8px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold">v2.0</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">SPA SEO & RUM Studio</span>
+            <span className="text-[9px] text-slate-400 font-medium">SPA SEO & RUM Studio</span>
           </div>
         </Link>
       </div>
 
-      {/* Navigation Links */}
-      <div className="p-3 flex-1 flex flex-col gap-1 space-y-0.5 overflow-y-auto">
-        <div className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider px-3 pt-2 pb-1">
+      {/* Navigation Links (Scrollable independently only if viewport is ultra-short) */}
+      <div className="p-2 flex-1 flex flex-col gap-0.5 space-y-0.5 overflow-y-auto custom-scrollbar">
+        <div className="text-[9px] font-bold font-mono text-slate-400 uppercase tracking-wider px-3 pt-1.5 pb-0.5">
           STUDIO NAVIGATION
         </div>
 
@@ -71,9 +71,9 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all ${
+                `flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm border border-indigo-200/80'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-xs border border-indigo-200/80'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
@@ -81,21 +81,23 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
               {({ isActive }) => (
                 <>
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                    <span>{item.label}</span>
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.label}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 shrink-0">
                     {item.isPro && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-0.5">
+                      <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-0.5">
                         <Lock className="w-2.5 h-2.5" /> PRO
                       </span>
                     )}
 
                     {item.badge && (
                       <span
-                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                          item.badgeColor === 'rose'
+                        className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full border ${
+                          item.badgeColor === 'emerald'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : item.badgeColor === 'rose'
                             ? 'bg-rose-50 text-rose-600 border-rose-200'
                             : item.badgeColor === 'indigo'
                             ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
@@ -117,51 +119,47 @@ export default function Sidebar({ issuesCount = 0, schemaCount = 0, onOpenGuide,
         })}
       </div>
 
-      {/* Upgrade to Pro Card */}
-      <div className="p-3 border-t border-slate-100">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-cyan-50 border border-indigo-100 space-y-2">
+      {/* Upgrade to Pro Card (Compact & Pinned to Bottom) */}
+      <div className="p-2.5 border-t border-slate-100 shrink-0">
+        <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-cyan-50 border border-indigo-100 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> AuditPulse Pro
+              <Sparkles className="w-3 h-3 text-indigo-600" /> AuditPulse Pro
             </span>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white">
               $29/mo
             </span>
           </div>
-          <p className="text-[10px] text-slate-600 leading-snug">
-            Unlock 90-day retention, Slack alerts, and multi-domain RUM.
+          <p className="text-[10px] text-slate-500 leading-tight">
+            Unlock 90-day retention & Slack alerts.
           </p>
           <button
             onClick={onOpenPricing}
-            className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm"
+            className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] transition shadow-xs"
           >
             Upgrade Plan
           </button>
         </div>
       </div>
 
-      {/* Back to Landing Page Link */}
-      <div className="px-3 py-2 border-t border-slate-100">
+      {/* Bottom Footer Navigation Links (Landing Page & CWV Guide) */}
+      <div className="px-3 py-2 border-t border-slate-200 shrink-0 flex items-center justify-between text-xs font-mono text-slate-600">
         <Link
           to="/"
-          className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-mono text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50 transition-colors"
+          className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 transition"
+          title="Return to Landing Page"
         >
-          <div className="flex items-center gap-2">
-            <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
-            <span>Landing Page</span>
-          </div>
-          <span className="text-[10px] text-slate-400">Home</span>
+          <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
+          <span>Landing</span>
         </Link>
-      </div>
 
-      {/* Sidebar Footer Help Guide */}
-      <div className="p-3 border-t border-slate-200">
         <button
           onClick={onOpenGuide}
-          className="w-full py-2 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-center gap-2"
+          className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold transition"
+          title="Open Core Web Vitals Metrics Guide"
         >
-          <HelpCircle className="w-4 h-4 text-indigo-600" />
-          <span>CWV Metrics Guide</span>
+          <HelpCircle className="w-3.5 h-3.5 text-indigo-500" />
+          <span>CWV Guide</span>
         </button>
       </div>
 
