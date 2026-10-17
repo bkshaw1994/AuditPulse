@@ -35,8 +35,8 @@ export default function Footer({ flags = {} }) {
         }
       })
       .catch((err) => {
-        console.warn('[Analytics] Visitor counter fetch fallback:', err);
-        setVisitorCount(12842);
+        console.warn('[Analytics] Visitor counter fetch error:', err);
+        setVisitorCount(0);
       });
   }, []);
 
