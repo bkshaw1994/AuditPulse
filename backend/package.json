@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "NODE_ENV=test node --test --experimental-test-coverage tests/api.test.js tests/crawler.test.js"
+    "test": "NODE_ENV=test node --test --experimental-test-coverage tests/api.test.js tests/crawler.test.js tests/externalAudit.test.js"
   },
   "dependencies": {
     "axios": "^1.6.8",
