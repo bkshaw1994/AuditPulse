@@ -15,13 +15,10 @@ function getPublicReportBaseUrl() {
  */
 router.post('/', authenticateExternalApiKey, async (req, res) => {
   try {
-    const { url, businessName, niche = '' } = req.body || {};
+    const { url, businessName = '', niche = '' } = req.body || {};
 
-    if (!url || typeof url !== 'string') {
+    if (!url || typeof url !== 'string' || !url.trim()) {
       return res.status(400).json({ error: 'url is required.' });
-    }
-    if (!businessName || typeof businessName !== 'string' || !businessName.trim()) {
-      return res.status(400).json({ error: 'businessName is required.' });
     }
 
     const scanResult = await runExternalAudit({ url, businessName, niche });
@@ -39,17 +36,19 @@ router.post('/', authenticateExternalApiKey, async (req, res) => {
       reportUrl,
       businessName: scanResult.businessName,
       niche: scanResult.niche,
+      detectedStack: scanResult.detectedStack,
       metrics: {
+        mobilePerformanceScore: scanResult.metrics.mobilePerformanceScore,
         performanceScore: scanResult.metrics.performanceScore,
         seoScore: scanResult.metrics.seoScore,
         bestPracticesScore: scanResult.metrics.bestPracticesScore,
         lcp: scanResult.metrics.lcp,
-        inp: scanResult.metrics.inp,
         cls: scanResult.metrics.cls,
+        inp: scanResult.metrics.inp,
         fcp: scanResult.metrics.fcp
       },
       topIssues: scanResult.topIssues,
-      detectedStack: scanResult.detectedStack,
+      auditedAt: scanResult.auditedAt,
       failingAudits: scanResult.failingAudits,
       htmlChecks: scanResult.htmlChecks
     });

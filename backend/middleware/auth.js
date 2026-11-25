@@ -52,7 +52,7 @@ function authenticateExternalApiKey(req, res, next) {
   const providedHash = crypto.createHash('sha256').update(providedKey).digest();
 
   if (!crypto.timingSafeEqual(expectedHash, providedHash)) {
-    return res.status(403).json({
+    return res.status(401).json({
       success: false,
       error: 'Invalid x-api-key.'
     });

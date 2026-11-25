@@ -152,19 +152,21 @@ describe('External Business Scanner & Shareable Client Reports', () => {
       { fetchFn: mockFetch, psiApiKey: 'test-psi-key' }
     );
 
+    assert.strictEqual(result.metrics.mobilePerformanceScore, 42);
     assert.strictEqual(result.metrics.performanceScore, 42);
     assert.strictEqual(result.metrics.seoScore, 71);
     assert.strictEqual(result.metrics.bestPracticesScore, 83);
-    assert.strictEqual(result.metrics.lcp, '4.8s');
-    assert.strictEqual(result.metrics.inp, '340ms');
+    assert.strictEqual(result.metrics.lcp, '4.8 s');
+    assert.strictEqual(result.metrics.inp, '340 ms');
     assert.strictEqual(result.metrics.cls, '0.24');
-    assert.strictEqual(result.metrics.fcp, '2.1s');
+    assert.strictEqual(result.metrics.fcp, '2.1 s');
+    assert.ok(result.auditedAt);
     assert.strictEqual(result.detectedStack, 'WordPress');
     assert.strictEqual(result.htmlChecks.hasTitle, true);
     assert.strictEqual(result.htmlChecks.hasMetaDescription, false);
     assert.strictEqual(result.htmlChecks.hasH1, false);
     assert.strictEqual(result.htmlChecks.hasOpenGraph, false);
-    assert.ok(result.topIssues.some((i) => i.includes('4.8s')));
+    assert.ok(result.topIssues.some((i) => i.includes('4.8 s')));
     assert.ok(result.topIssues.some((i) => i.includes('Missing meta description')));
   });
 
@@ -182,13 +184,21 @@ describe('External Business Scanner & Shareable Client Reports', () => {
     });
     assert.strictEqual(unauthRes.status, 401);
 
-    // 2. Wrong key -> 403
+    // 2. Wrong key -> 401
     const forbiddenRes = await originalFetch(`${baseUrl}/api/external-audit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': 'wrong-key' },
       body: JSON.stringify({ url: 'https://example.com', businessName: 'Acme Dental' })
     });
-    assert.strictEqual(forbiddenRes.status, 403);
+    assert.strictEqual(forbiddenRes.status, 401);
+
+    // 2b. Empty {} body with valid key -> 400
+    const emptyBodyRes = await originalFetch(`${baseUrl}/api/external-audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': 'super-secret-crm-key' },
+      body: JSON.stringify({})
+    });
+    assert.strictEqual(emptyBodyRes.status, 400);
 
     // 3. Valid key with mocked upstream PSI + target HTML fetch
     global.fetch = async (target, init) => {
@@ -231,14 +241,17 @@ describe('External Business Scanner & Shareable Client Reports', () => {
 
     assert.strictEqual(validRes.status, 200);
     const body = await validRes.json();
+    assert.strictEqual(body.reportId.length, 10);
     assert.match(body.reportId, /^[0-9A-Za-z]{10}$/);
     assert.strictEqual(body.reportUrl, `https://auditpulse-dashboard-theta.vercel.app/report/${body.reportId}`);
     assert.strictEqual(body.businessName, 'Acme Dental');
+    assert.strictEqual(body.metrics.mobilePerformanceScore, 65);
     assert.strictEqual(body.metrics.performanceScore, 65);
     assert.strictEqual(body.metrics.seoScore, 88);
-    assert.strictEqual(body.metrics.lcp, '3.1s');
-    assert.strictEqual(body.metrics.inp, '180ms');
+    assert.strictEqual(body.metrics.lcp, '3.1 s');
+    assert.strictEqual(body.metrics.inp, '180 ms');
     assert.strictEqual(body.metrics.cls, '0.05');
+    assert.ok(body.auditedAt);
 
     // 4. Public GET /api/external-audit/:reportId works without x-api-key
     const getRes = await originalFetch(`${baseUrl}/api/external-audit/${body.reportId}`);
