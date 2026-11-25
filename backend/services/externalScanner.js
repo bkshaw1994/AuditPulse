@@ -43,12 +43,12 @@ function stripMarkdownLinks(text = '') {
 
 function formatSeconds(ms) {
   if (typeof ms !== 'number' || Number.isNaN(ms)) return 'N/A';
-  return `${(ms / 1000).toFixed(1)}s`;
+  return `${(ms / 1000).toFixed(1)} s`;
 }
 
 function formatMilliseconds(ms) {
   if (typeof ms !== 'number' || Number.isNaN(ms)) return 'N/A';
-  return `${Math.round(ms)}ms`;
+  return `${Math.round(ms)} ms`;
 }
 
 function formatCls(val) {
@@ -169,6 +169,7 @@ async function fetchPageSpeedInsights(targetUrl, apiKey = process.env.PAGESPEED_
 
   return {
     metrics: {
+      mobilePerformanceScore: performanceScore,
       performanceScore,
       seoScore,
       bestPracticesScore,
@@ -348,8 +349,11 @@ function buildTopIssues(metrics, failingAudits, htmlChecks) {
 /**
  * Run a zero-install external audit combining PageSpeed Insights v5 and direct HTML inspection.
  */
-async function runExternalAudit({ url, businessName, niche = '' }, deps = {}) {
+async function runExternalAudit({ url, businessName = '', niche = '' }, deps = {}) {
   const normalizedUrl = normalizeTargetUrl(url);
+  const resolvedBusinessName = typeof businessName === 'string' && businessName.trim()
+    ? businessName.trim()
+    : new URL(normalizedUrl).hostname;
   const fetchFn = deps.fetchFn || fetch;
   const psiApiKey = deps.psiApiKey !== undefined ? deps.psiApiKey : process.env.PAGESPEED_API_KEY;
 
@@ -366,13 +370,14 @@ async function runExternalAudit({ url, businessName, niche = '' }, deps = {}) {
 
   return {
     url: normalizedUrl,
-    businessName: businessName.trim(),
+    businessName: resolvedBusinessName,
     niche: typeof niche === 'string' ? niche.trim() : '',
     detectedStack: htmlResult.detectedStack,
     metrics: psiResult.metrics,
     failingAudits: psiResult.failingAudits,
     htmlChecks: htmlResult.htmlChecks,
-    topIssues
+    topIssues,
+    auditedAt: new Date().toISOString()
   };
 }
 

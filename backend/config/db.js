@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 let isMongoConnected = false;
 
 const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    isMongoConnected = true;
+    return;
+  }
   const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/spa_seo_db';
   try {
     // Set short timeout for local fallback check

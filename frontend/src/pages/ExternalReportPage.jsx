@@ -52,9 +52,10 @@ function getScoreTone(score) {
 function getVitalStatus(metricKey, valueStr, numericVal) {
   let num = typeof numericVal === 'number' ? numericVal : null;
   if (num === null && typeof valueStr === 'string') {
-    const parsed = parseFloat(valueStr);
+    const trimmed = valueStr.trim();
+    const parsed = parseFloat(trimmed);
     if (!Number.isNaN(parsed)) {
-      if (valueStr.endsWith('s') && !valueStr.endsWith('ms')) {
+      if (trimmed.endsWith('s') && !trimmed.endsWith('ms')) {
         num = parsed * 1000;
       } else {
         num = parsed;
@@ -213,8 +214,10 @@ export default function ExternalReportPage() {
   const htmlChecks = report.htmlChecks || {};
   const failingAudits = report.failingAudits || [];
   const topIssues = report.topIssues || [];
-  const generatedAt = report.createdAt
-    ? new Date(report.createdAt).toLocaleDateString('en-US', {
+  const perfScore = metrics.mobilePerformanceScore ?? metrics.performanceScore ?? 0;
+  const timestampSource = report.auditedAt || report.createdAt;
+  const generatedAt = timestampSource
+    ? new Date(timestampSource).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -391,7 +394,7 @@ export default function ExternalReportPage() {
           <ScoreGauge
             title="Performance"
             subtitle="Mobile Speed"
-            score={metrics.performanceScore}
+            score={perfScore}
           />
           <ScoreGauge
             title="Technical SEO"

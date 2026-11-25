@@ -23,6 +23,7 @@ const ExternalReportSchema = new mongoose.Schema({
   detectedStack: { type: String, default: 'Custom / HTML' },
 
   metrics: {
+    mobilePerformanceScore: { type: Number, default: 0 },
     performanceScore: { type: Number, default: 0 },
     seoScore: { type: Number, default: 0 },
     bestPracticesScore: { type: Number, default: 0 },
@@ -35,6 +36,8 @@ const ExternalReportSchema = new mongoose.Schema({
     clsValue: { type: Number, default: null },
     fcpMs: { type: Number, default: null }
   },
+
+  auditedAt: { type: String, default: '' },
 
   topIssues: [{ type: String }],
 
@@ -69,7 +72,9 @@ const ExternalReportSchema = new mongoose.Schema({
 
 const ExternalReportModel = mongoose.model('ExternalReport', ExternalReportSchema);
 
-const FALLBACK_FILE = path.join(__dirname, '../external_reports_fallback.json');
+const FALLBACK_FILE = process.env.VERCEL
+  ? '/tmp/external_reports_fallback.json'
+  : path.join(__dirname, '../external_reports_fallback.json');
 let fallbackReports = [];
 
 try {

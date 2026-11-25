@@ -48,6 +48,20 @@ app.use(
 
 app.use(express.json({ limit: '2mb' }));
 
+// Ensure DB connection is attempted once on serverless cold starts
+let dbInitPromise = null;
+app.use(async (req, res, next) => {
+  if (process.env.NODE_ENV !== 'test') {
+    if (!dbInitPromise) {
+      dbInitPromise = connectDB().catch((err) => {
+        console.warn('[Serverless DB Init]', err.message);
+      });
+    }
+    await dbInitPromise;
+  }
+  next();
+});
+
 // 4. Rate Limiting Middleware
 app.use('/api/', globalLimiter);
 app.use('/api/audit/run', auditCrawlLimiter);
@@ -122,4 +136,8 @@ const shutdown = () => {
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
-module.exports = { app, connectDB, seedInitialDataIfEmpty };
+app.app = app;
+app.connectDB = connectDB;
+app.seedInitialDataIfEmpty = seedInitialDataIfEmpty;
+
+module.exports = app;
