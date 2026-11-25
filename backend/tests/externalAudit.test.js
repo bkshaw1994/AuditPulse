@@ -17,12 +17,14 @@ const FALLBACK_REPORTS_FILE = path.join(__dirname, '../external_reports_fallback
 let testServer;
 let baseUrl;
 let originalFetch;
+let originalAuditPulseKey;
 let originalApiKey;
 let originalPsiKey;
 let originalBaseUrl;
 
 before(async () => {
   originalFetch = global.fetch;
+  originalAuditPulseKey = process.env.AUDIT_PULSE_API_KEY;
   originalApiKey = process.env.EXTERNAL_AUDIT_API_KEY;
   originalPsiKey = process.env.PAGESPEED_API_KEY;
   originalBaseUrl = process.env.PUBLIC_REPORT_BASE_URL;
@@ -39,6 +41,9 @@ before(async () => {
 
 afterEach(() => {
   global.fetch = originalFetch;
+  if (originalAuditPulseKey === undefined) delete process.env.AUDIT_PULSE_API_KEY;
+  else process.env.AUDIT_PULSE_API_KEY = originalAuditPulseKey;
+
   if (originalApiKey === undefined) delete process.env.EXTERNAL_AUDIT_API_KEY;
   else process.env.EXTERNAL_AUDIT_API_KEY = originalApiKey;
 
@@ -164,7 +169,8 @@ describe('External Business Scanner & Shareable Client Reports', () => {
   });
 
   test('POST /api/external-audit enforces x-api-key and persists shareable report for GET', async () => {
-    process.env.EXTERNAL_AUDIT_API_KEY = 'super-secret-crm-key';
+    delete process.env.EXTERNAL_AUDIT_API_KEY;
+    process.env.AUDIT_PULSE_API_KEY = 'super-secret-crm-key';
     process.env.PAGESPEED_API_KEY = 'psi-key-123';
     process.env.PUBLIC_REPORT_BASE_URL = 'https://auditpulse-dashboard-theta.vercel.app';
 

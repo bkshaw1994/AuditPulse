@@ -32,11 +32,11 @@ function authenticateToken(tokensMap) {
  * Constant-time API key validation for external CRM/outreach integrations.
  */
 function authenticateExternalApiKey(req, res, next) {
-  const expectedKey = process.env.EXTERNAL_AUDIT_API_KEY;
+  const expectedKey = process.env.AUDIT_PULSE_API_KEY || process.env.EXTERNAL_AUDIT_API_KEY;
   if (!expectedKey) {
     return res.status(503).json({
       success: false,
-      error: 'External audit API key is not configured on the server.'
+      error: 'AUDIT_PULSE_API_KEY is not configured on the server.'
     });
   }
 
