@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 /**
  * Bearer Token Authentication Middleware
  */
@@ -26,6 +28,40 @@ function authenticateToken(tokensMap) {
   };
 }
 
+/**
+ * Constant-time API key validation for external CRM/outreach integrations.
+ */
+function authenticateExternalApiKey(req, res, next) {
+  const expectedKey = process.env.EXTERNAL_AUDIT_API_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({
+      success: false,
+      error: 'External audit API key is not configured on the server.'
+    });
+  }
+
+  const providedKey = req.headers['x-api-key'];
+  if (!providedKey || typeof providedKey !== 'string') {
+    return res.status(401).json({
+      success: false,
+      error: 'Missing x-api-key header.'
+    });
+  }
+
+  const expectedHash = crypto.createHash('sha256').update(expectedKey).digest();
+  const providedHash = crypto.createHash('sha256').update(providedKey).digest();
+
+  if (!crypto.timingSafeEqual(expectedHash, providedHash)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Invalid x-api-key.'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
-  authenticateToken
+  authenticateToken,
+  authenticateExternalApiKey
 };

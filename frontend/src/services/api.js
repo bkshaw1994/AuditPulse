@@ -1,27 +1,25 @@
-function getApiBaseUrl() {
+function getApiRootUrl() {
   const envUrl = (typeof window !== 'undefined' && window.RUNTIME_API_BASE_URL)
     || (import.meta && import.meta.env && import.meta.env.VITE_API_BASE_URL)
-    || '/api/audit';
+    || '/api';
 
   let cleaned = envUrl.trim().replace(/\/+$/, '');
-
   if (!cleaned) {
-    return '/api/audit';
+    return '/api';
   }
 
-  // Ensure path ends with /api/audit regardless of how BE url was provided in env
-  if (!cleaned.endsWith('/api/audit')) {
-    if (cleaned.endsWith('/api')) {
-      cleaned = `${cleaned}/audit`;
-    } else {
-      cleaned = `${cleaned}/api/audit`;
-    }
+  if (cleaned.endsWith('/api/audit')) {
+    cleaned = cleaned.slice(0, -'/audit'.length);
+  } else if (!cleaned.endsWith('/api')) {
+    cleaned = `${cleaned}/api`;
   }
 
   return cleaned;
 }
 
-const API_BASE = getApiBaseUrl();
+const API_ROOT = getApiRootUrl();
+const API_BASE = `${API_ROOT}/audit`;
+const EXTERNAL_AUDIT_BASE = `${API_ROOT}/external-audit`;
 
 export async function runAudit(url) {
   const res = await fetch(`${API_BASE}/run`, {
@@ -57,6 +55,17 @@ export async function fetchDiff(crawl1Id, crawl2Id) {
   const res = await fetch(`${API_BASE}/diff?crawl1Id=${crawl1Id}&crawl2Id=${crawl2Id}`);
   if (!res.ok) {
     throw new Error('Failed to fetch historical diff');
+  }
+  return await res.json();
+}
+
+export async function fetchExternalReport(reportId) {
+  const res = await fetch(`${EXTERNAL_AUDIT_BASE}/${encodeURIComponent(reportId)}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const err = new Error(errorData.error || `Failed to load report (${res.status})`);
+    err.status = res.status;
+    throw err;
   }
   return await res.json();
 }

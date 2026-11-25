@@ -5,7 +5,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { connectDB } = require('./config/db');
-const { auditRoutes, flagRoutes, billingRoutes, authRoutes, analyticsRoutes } = require('./routes');
+const { auditRoutes, flagRoutes, billingRoutes, authRoutes, analyticsRoutes, externalAuditRoutes } = require('./routes');
 const { CrawlResultRepository, FeatureFlagRepository } = require('./models');
 const { errorHandler, globalLimiter, auditCrawlLimiter } = require('./middleware');
 
@@ -57,6 +57,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 6. Routes
 app.use('/api/audit', auditRoutes);
+app.use('/api/external-audit', externalAuditRoutes);
 app.use('/api/flags', flagRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/auth', authRoutes);

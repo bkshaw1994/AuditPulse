@@ -13,6 +13,7 @@ frontend/.env
 dist/
 build/
 backend/data_fallback.json
+backend/external_reports_fallback.json
 
 # Logs & OS
 *.log
